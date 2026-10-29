@@ -118,8 +118,8 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done
 - [x] pytest: every analytics module, ScoreService integration, all new endpoints
 - [ ] AFib (irregular rhythm) notifications on Heart page: none in the data yet; add when
       one exists to design against
-- [ ] **You:** run checks; `fitbit db renormalize --types sleep` then `fitbit analyze --all`
-      on the real database; review scores in the UI
+- [x] **You:** run checks; `fitbit db renormalize` then `fitbit analyze --all` on the real
+      database; review scores in the UI
 
 ---
 

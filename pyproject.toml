@@ -56,3 +56,8 @@ pythonpath = ["src", "tests"]
 addopts = "--import-mode=importlib"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+filterwarnings = [
+    # Starlette is moving TestClient to httpx2; harmless until httpx support is removed.
+    # Revisit (add httpx2 as a dev dependency) when upgrading dependencies.
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated",
+]
