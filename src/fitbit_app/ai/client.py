@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from collections.abc import AsyncIterator, Sequence
 from typing import Any, TypeVar
 
@@ -21,6 +22,23 @@ Message = dict[str, str]
 
 TEMPERATURE = 0.3
 _UNREACHABLE = (httpx.HTTPError, ConnectionError)
+_FENCE = re.compile(r"```(?:json)?\s*(.*?)```", re.DOTALL)
+
+
+def extract_json(text: str) -> str:
+    """The JSON object in a reply that may wrap it in a code fence or surrounding prose."""
+    fenced = _FENCE.search(text)
+    if fenced:
+        text = fenced.group(1)
+    start, end = text.find("{"), text.rfind("}")
+    return text[start : end + 1] if 0 <= start < end else text.strip()
+
+
+def describe_errors(exc: ValidationError) -> str:
+    """Field paths and error types only, never the (health-related) values."""
+    return ", ".join(
+        f"{'.'.join(str(p) for p in err['loc']) or '<root>'}:{err['type']}" for err in exc.errors()
+    )
 
 
 class LLM:
@@ -64,10 +82,10 @@ class LLM:
         for _ in range(2):
             content = await self._chat(attempt_messages, format_=schema.model_json_schema())
             try:
-                return schema.model_validate_json(content)
+                return schema.model_validate_json(extract_json(content))
             except ValidationError as exc:
                 last_error = exc
-                logger.warning("Model output failed validation (%d errors)", exc.error_count())
+                logger.warning("Model output failed validation: %s", describe_errors(exc))
                 attempt_messages = [
                     *messages,
                     {"role": "assistant", "content": content},

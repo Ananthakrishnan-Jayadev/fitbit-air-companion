@@ -12,3 +12,5 @@ Return JSON with:
 - `wins`: up to 3 things that went well.
 - `watch`: up to 3 things to keep an eye on.
 - `focus`: one concrete focus for next week.
+
+Reply with the JSON object only: no markdown, no code fences, no other text.

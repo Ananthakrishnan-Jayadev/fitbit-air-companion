@@ -54,6 +54,13 @@ async def test_structured_output(ai_settings: Settings) -> None:
     assert call["options"]["num_ctx"] == ai_settings.ollama_num_ctx
 
 
+async def test_accepts_fenced_output(ai_settings: Settings) -> None:
+    client = FakeOllamaClient(replies=[f"```json\n{VALID}\n```"])
+    result = await LLM(ai_settings, client).generate(MESSAGES, DailyBrief)
+    assert result == SAMPLES[DailyBrief]
+    assert len(client.chat_calls) == 1
+
+
 async def test_retries_once_on_invalid_output(ai_settings: Settings) -> None:
     client = FakeOllamaClient(replies=['{"headline": "x"}', VALID])
     result = await LLM(ai_settings, client).generate(MESSAGES, DailyBrief)

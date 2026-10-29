@@ -13,3 +13,5 @@ Return JSON with:
 - `explanation`: 2-4 sentences connecting the specific deviations above.
 - `suggestions`: 1-3 practical things to do today.
 - `see_doctor_if`: when it would be sensible to talk to a doctor.
+
+Reply with the JSON object only: no markdown, no code fences, no other text.
