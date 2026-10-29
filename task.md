@@ -124,21 +124,23 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done
 ---
 
 ## Phase 4: Local AI coach (Ollama)
-- [ ] `ai/client.py`: `ollama.AsyncClient`, timeout, model presence check, fallback model
-- [ ] `ai/schemas.py`: pydantic schemas for brief / tips / weekly / anomaly explainer
-- [ ] `ai/prompts/`: system prompt (grounded, non-diagnostic) + Jinja templates
-- [ ] `ai/context.py`: feature pack → prompt context, token budget guard
-- [ ] `ai/service.py`: daily brief, weekly review, anomaly explainer, using structured
-      `format=` JSON, validation, one retry, `prompt_hash` dedupe
-- [ ] Coach chat: SSE streaming endpoint, history in `chat_messages`
-- [ ] API: `/api/ai/status`, `/api/ai/insights`, `/api/ai/brief/regenerate`, `/api/ai/chat`
-- [ ] Scheduler: daily brief (after morning sleep lands, 09:00 fallback), weekly review
-      (Mon 09:00), anomaly explainer on new flags
-- [ ] CLI `fitbit brief [--date]`
-- [ ] UI: brief + tips on **Today**, **Coach** page (streaming), Ollama status banner
-- [ ] Graceful degradation when Ollama is down / `AI_ENABLED=false`
-- [ ] pytest: prompt building, schema validation/retry, dedupe, degradation, chat endpoint
-      (Ollama mocked)
+- [x] `ai/client.py`: `ollama.AsyncClient`, timeout, model presence check, fallback model,
+      optional `think` (auto-disabled for models without it)
+- [x] `ai/schemas.py`: pydantic schemas for brief / tips / weekly / anomaly note
+- [x] `ai/prompts/` + `ai/templates.py`: grounded, non-diagnostic system prompt + Jinja templates
+- [x] `ai/context.py`: feature pack, weekly context, recent days, size budget
+- [x] `ai/service.py`: daily brief, weekly review, anomaly note; structured JSON, validation,
+      one retry, `prompt_hash` dedupe, one generation at a time
+- [x] Coach chat: SSE streaming endpoint, history in `chat_messages`
+- [x] API: `/api/ai/status`, `/api/ai/insights`, `/api/ai/generate`, `/api/ai/chat`,
+      `/api/ai/chat/{id}`
+- [x] Triggers: after each sync (brief once sleep is in, anomaly note on flags, weekly on
+      Mondays) instead of fixed-time jobs
+- [x] CLI `fitbit brief [--date] [--kind] [--force]`
+- [x] UI: coach's brief (+ anomaly note, weekly review) on **Today**, **Coach** chat page
+- [x] Graceful degradation when Ollama is down / `AI_ENABLED=false`
+- [x] pytest: client (fake Ollama), templates, context, service, API incl. SSE (fake LLM)
+- [ ] **You:** run checks, then try a real brief (`fitbit brief`) and the Coach page
 
 ---
 

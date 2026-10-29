@@ -295,24 +295,32 @@ This keeps prompts fast and grounded, and it reduces hallucinated numbers.
 ### 8.3 Features
 | Feature | Trigger | Output |
 |---|---|---|
-| **Daily brief** | Scheduler, after morning sleep data lands (first sync after wake, or 09:00 fallback) | 3–5 sentence summary + 3 actionable tips, stored in `ai_insights` |
-| **Weekly review** | Monday 09:00 | Trends, wins, one focus for the week |
-| **Anomaly explainer** | When `anomaly.py` raises a flag | Plain-language "what this might mean / what to watch" (non-diagnostic) |
-| **Coach chat** | User, `/api/ai/chat` (SSE streaming) | Conversational Q&A grounded on the feature pack plus recent insights |
+| **Daily brief** | After a sync, once today's score has last night's sleep (one automatic brief per day; **Regenerate** any time) | Headline, 3–5 sentence summary, 1–3 tips → `ai_insights` |
+| **Weekly review** | First sync on a Monday, for the week ending Sunday | Headline, summary vs previous week, wins, watch-outs, one focus |
+| **Anomaly note** | After a sync, when today's score has flags | What the signals together could mean, suggestions, when to see a doctor |
+| **Coach chat** | User, `POST /api/ai/chat` (SSE) | Conversational answers grounded on today's feature pack + last 7 days |
+
+Triggers piggyback on the post-sync hook (syncs run every 15 min) instead of fixed-time jobs,
+so the brief appears as soon as sleep lands. Generation runs as a background task and never
+holds up syncing.
 
 ### 8.4 Implementation details
-- `ollama.AsyncClient(host=...)`. Structured outputs use `format=<JSON schema>` (pydantic
-  model `.model_json_schema()`) for briefs/tips, validated with pydantic and retried once
-  on invalid JSON.
-- Prompt templates live in `ai/prompts/*.md` (Jinja2) with a fixed system prompt: coach
-  persona, cite only the provided numbers, no diagnoses, suggest seeing a doctor for
-  persistent anomalies.
-- Chat: last N messages + fresh feature pack injected as system context. Later
-  enhancement: Ollama **tool calling** so the model can request `get_metric(name, range)`
-  and answer questions like "how did my HRV look in September?"
-- `ai_insights.prompt_hash` dedupes: the same features produce no regeneration.
-- `/api/ai/status` reports Ollama reachability, model presence (`client.list()`), last error.
-- If Ollama is down, the app works fully without AI. The UI shows a banner.
+- `ai/client.py` (`LLM`): picks `OLLAMA_MODEL`, else `OLLAMA_FALLBACK_MODEL`. Structured
+  outputs use `format=<JSON schema>` from the pydantic models in `ai/schemas.py`, validated,
+  with one corrective retry. `OLLAMA_THINK` (default off) controls reasoning mode; it is
+  dropped automatically for models that don't support it.
+- Prompts: `ai/prompts/*.md` rendered by `ai/templates.py` (Jinja2, strict undefined).
+  System prompt: coach persona, explains each metric, use only given numbers, never diagnose.
+- `ai/context.py`: the feature pack (scores, daily values, z-scores, 7-day trends, flags,
+  sleep summary, recovery drivers, recent workouts), capped at ~6k characters by dropping
+  optional sections.
+- `ai/service.py` (`AIService`): one generation at a time (lock), results deduped by
+  `prompt_hash` (model + prompt), chat history in `chat_messages` (last 12 messages sent).
+- API: `GET /api/ai/status`, `GET /api/ai/insights?date`, `POST /api/ai/generate {kind, date}`,
+  `POST /api/ai/chat` (SSE: `conversation_id`, `delta`…, `done`/`error`),
+  `GET /api/ai/chat/{conversation_id}`. CLI: `fitbit brief [--date] [--kind] [--force]`.
+- If Ollama is down or `AI_ENABLED=false`, everything else works; AI cards show why.
+- Later (Phase 5): Ollama **tool calling** so chat can query history ("my HRV in September").
 
 ---
 
@@ -334,8 +342,9 @@ GET  /api/trends?metric&window
 GET  /api/correlations
 GET/POST/DELETE /api/journal
 GET  /api/ai/insights?date&kind
-POST /api/ai/brief/regenerate {date}
+POST /api/ai/generate {kind, date}
 POST /api/ai/chat  (text/event-stream)
+GET  /api/ai/chat/{conversation_id}
 GET  /api/ai/status
 GET/PUT /api/settings                    app preferences (e.g. AI on/off)
 ```
