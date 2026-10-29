@@ -195,6 +195,10 @@ stress. BMI and BMR also need to be derived client-side.
 - Rate limits: 300 req/min per user; Testing-mode apps 2.5 QPS → client spaces requests at
   `SYNC_REQUESTS_PER_S` (2.0), retries 429/5xx with backoff honouring `Retry-After`.
 - One failing data type is recorded in `sync_state.last_error` and does not stop the others.
+- Filters use the snake_case type name (`heart_rate.sample_time.physical_time`); the live API
+  rejects camelCase for multi-word types. Reconciled points carry no `dataPointName` and no
+  heart-rate `motionContext`, so sessions are keyed by start time and `hr_samples.motion_context`
+  stays empty (activity context comes from `activity-level` instead).
 - Timestamps are stored in **UTC**. Each API point carries its own UTC offset, which is used
   for local-day assignment (e.g. a night belongs to the local date you wake up on).
 

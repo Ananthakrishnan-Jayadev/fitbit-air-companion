@@ -66,10 +66,25 @@ def test_unknown_key_raises() -> None:
         select_specs(include_beta=False, keys=["steps", "nope"])
 
 
+@pytest.mark.parametrize(
+    ("key", "prefix"),
+    [
+        ("steps", "steps"),
+        ("heart-rate", "heart_rate"),
+        ("run-vo2-max", "run_vo2_max"),
+        ("daily-sleep-temperature-derivations", "daily_sleep_temperature_derivations"),
+        ("irregular-rhythm-notification", "irregular_rhythm_notification"),
+    ],
+)
+def test_filter_prefix_is_snake_case(key: str, prefix: str) -> None:
+    # Verified against the live API 2026-10-29: camelCase prefixes are rejected.
+    assert _spec(key).filter_prefix == prefix
+
+
 def test_filter_sample() -> None:
     assert build_filter(_spec("heart-rate"), START, END) == (
-        'heartRate.sample_time.physical_time >= "2026-10-01T04:00:00Z" '
-        'AND heartRate.sample_time.physical_time < "2026-10-08T04:00:00Z"'
+        'heart_rate.sample_time.physical_time >= "2026-10-01T04:00:00Z" '
+        'AND heart_rate.sample_time.physical_time < "2026-10-08T04:00:00Z"'
     )
 
 
@@ -82,7 +97,8 @@ def test_filter_interval() -> None:
 
 def test_filter_daily_includes_end_day() -> None:
     assert build_filter(_spec("daily-resting-heart-rate"), START, END) == (
-        'dailyRestingHeartRate.date >= "2026-10-01" AND dailyRestingHeartRate.date < "2026-10-09"'
+        'daily_resting_heart_rate.date >= "2026-10-01" '
+        'AND daily_resting_heart_rate.date < "2026-10-09"'
     )
 
 

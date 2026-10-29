@@ -83,9 +83,11 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done
 - [x] **Settings page:** Connect Google, per-type sync status, backfill, profile
 - [x] pytest: client (respx), OAuth refresh/re-auth, sync cursors/backfill/idempotency,
       normalization incl. midnight-crossing sleep, auth/sync/profile API
-- [ ] **After the first real sync:** resolve every `TODO(verify)` (filter prefixes for
-      multi-word types, exercise `metricsSummary`, rollup value fields, `activityLevelType`
-      values) by inspecting `data_points.value_json`, then normalize those fields
+- [x] Filter prefixes: snake_case (`heart_rate.…`), verified live 2026-10-29
+- [x] Redact OAuth `code`/`state` from access logs; quiet per-request httpx logging
+- [ ] **After the next full sync:** resolve remaining `TODO(verify)` (exercise
+      `metricsSummary`, rollup value fields, `activityLevelType` values) by inspecting
+      `data_points.value_json`, then normalize those fields
 
 ---
 

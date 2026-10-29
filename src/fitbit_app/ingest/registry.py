@@ -4,14 +4,16 @@ Source: https://developers.google.com/health/data-types (verified 2026-10-29).
 To enable another type, add one DataTypeSpec here; storage and normalization pick it up
 (raw JSON is always kept unless `store_raw=False`).
 
-Filter field prefixes: the docs' examples use the camelCase union field name
-(`steps.interval.start_time`, `dailyHeartRateVariability.date`), so `field` doubles as the
-filter prefix. TODO(verify): multi-word types such as `heartRate` against a live response.
+Filter field prefixes are the snake_case form of the union field (`heart_rate`,
+`daily_resting_heart_rate`). The docs show `dailyHeartRateVariability.date`, but the live API
+rejects camelCase for multi-word types with INVALID_DATA_POINT_FILTER_DATA_TYPE_RESTRICTION
+(observed 2026-10-29); single-word types (`steps`, `sleep`) work either way.
 """
 
 from __future__ import annotations
 
 import datetime as dt
+import re
 from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import StrEnum
@@ -58,10 +60,17 @@ class DataTypeSpec:
         return f"{self.name}:daily" if self.kind is RecordKind.ROLLUP else self.name
 
     @property
+    def filter_prefix(self) -> str:
+        """heartRate -> heart_rate, runVo2Max -> run_vo2_max."""
+        return _CAMEL_BOUNDARY.sub("_", self.field).lower()
+
+    @property
     def page_size(self) -> int:
         # Sessions: default and max are both 25. Everything else: max 10000.
         return 25 if self.kind is RecordKind.SESSION else 10000
 
+
+_CAMEL_BOUNDARY = re.compile(r"(?<!^)(?=[A-Z])")
 
 _AF = scopes.ACTIVITY_AND_FITNESS
 _HM = scopes.HEALTH_METRICS
@@ -170,7 +179,7 @@ def select_specs(
 
 def build_filter(spec: DataTypeSpec, start: dt.datetime, end: dt.datetime) -> str:
     """AIP-160 filter for [start, end). See the `list` method reference for field names."""
-    f = spec.field
+    f = spec.filter_prefix
     if spec.kind is RecordKind.SAMPLE:
         return _range(f"{f}.sample_time.physical_time", to_rfc3339(start), to_rfc3339(end))
     if spec.kind is RecordKind.INTERVAL:
