@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import Any
+from typing import Any, ClassVar
 
 from sqlalchemy import (
     JSON,
@@ -32,7 +32,7 @@ NAMING_CONVENTION = {
 
 class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
-    type_annotation_map = {
+    type_annotation_map: ClassVar[dict[Any, Any]] = {
         dt.datetime: UTCDateTime(),
         dt.date: Date(),
         dict[str, Any]: JSON(),

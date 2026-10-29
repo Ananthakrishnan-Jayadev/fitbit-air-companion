@@ -2,6 +2,7 @@ import datetime as dt
 
 import pandas as pd
 import pytest
+
 from fixtures.synthetic import STAGES, generate
 
 START = dt.date(2026, 9, 1)
