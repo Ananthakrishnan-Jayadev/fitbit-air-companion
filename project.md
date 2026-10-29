@@ -61,8 +61,9 @@ _Last updated: 2026-10-29_
 - `fitbit serve` starts **one Uvicorn process** that:
   1. serves the REST API under `/api/*`,
   2. serves the **pre-built React app** (static files in `src/fitbit_app/static/`) at `/`,
-  3. runs the **APScheduler** jobs (sync + analysis + AI brief) inside the same event loop,
-  4. checks on startup that Ollama is reachable and the model is present (warns, does not crash).
+  3. runs the **APScheduler** sync jobs in the same event loop; each sync is followed by
+     rescoring and, in the background, any due AI insight (brief / anomaly note / weekly review),
+  4. starts fine without Ollama: AI features check it on demand and the UI shows its status.
 - `fitbit serve --dev` additionally launches `npm run dev` for the frontend as a **child
   subprocess** and pipes its logs into the same terminal. Vite proxies `/api` to FastAPI.
   Ctrl+C stops both.
@@ -74,12 +75,15 @@ Other CLI commands (same entry point):
 | Command | Purpose |
 |---|---|
 | `fitbit serve [--dev] [--port 8000] [--host 127.0.0.1]` | Run everything |
-| `fitbit sync [--since 2026-09-01] [--types heart-rate,sleep]` | One-off sync / backfill |
-| `fitbit analyze [--date YYYY-MM-DD]` | Recompute scores |
-| `fitbit brief [--date]` | Regenerate the AI daily brief |
-| `fitbit build-ui` | `npm --prefix frontend run build` → copies into `static/` |
-| `fitbit doctor` | Checks config, DB, Google token, Ollama + model |
+| `fitbit sync [--since YYYY-MM-DD] [--types heart-rate,sleep]` | One-off sync / backfill (rescoring follows) |
+| `fitbit analyze [--date YYYY-MM-DD \| --all]` | Recompute scores (default: everything on first run, else last 4 days) |
+| `fitbit brief [--date] [--kind daily_brief\|weekly_review\|anomaly] [--force]` | Generate an AI insight and print it |
+| `fitbit export [--out file.zip] [--intraday]` | ZIP of CSV files (credentials never included) |
+| `fitbit build-ui` | `npm run build` into `src/fitbit_app/static/` |
+| `fitbit doctor` | Config, DB schema, Google connection, data freshness, UI build, Ollama + model |
 | `fitbit db upgrade` | Run Alembic migrations |
+| `fitbit db backup [--out DIR]` | Consistent SQLite copy to `data/backups/` (0600) |
+| `fitbit db renormalize [--types ...]` | Rebuild typed tables from stored raw JSON (no download) |
 
 The console script is declared in `pyproject.toml`:
 
@@ -276,18 +280,22 @@ The UI never blocks on the LLM except in chat, which streams.
 
 ### 8.2 Principle: the LLM never sees raw series
 The analytics engine produces numbers; the LLM explains them. `ai/context.py` builds a
-small JSON "feature pack" (~1–3k tokens):
+small JSON "feature pack" (capped at ~6k characters). Shape as built (values illustrative):
 
 ```json
 {
   "date": "2026-10-29",
-  "scores": {"recovery": 62, "sleep_perf": 71, "strain_yesterday": 13.4, "strain_target": [10, 13]},
-  "vs_baseline": {"hrv_z": -1.1, "rhr_z": 0.8, "temp_delta_c": 0.3, "spo2_avg": 95.8},
-  "sleep": {"duration_h": 6.4, "deep_pct": 14, "rem_pct": 19, "bedtime_shift_min": 48},
-  "trend_7d": {"hrv": "down", "rhr": "up", "sleep_duration": "flat"},
-  "flags": ["hrv_suppressed_2_days"],
-  "journal": {"yesterday": ["alcohol", "late_meal"]},
-  "known_correlations": [{"tag": "alcohol", "effect": "recovery -11 (n=9)"}]
+  "scores": {"recovery": 50.4, "sleep_perf": 87.8, "strain_so_far_today": 11.4,
+             "strain_yesterday": 7.6, "strain_target_low": 10, "strain_target_high": 14},
+  "metrics": {"resting_hr": 57, "hrv_rmssd_ms": 41, "spo2_avg": 96.2, "steps": 8400},
+  "vs_baseline_z": {"hrv_rmssd_ms": -0.89, "resting_hr": 0.3},
+  "trend_7d": {"recovery": "up", "hrv": "flat", "strain": "down"},
+  "sleep": {"bedtime_local": "23:40", "wake_local": "07:12", "asleep_min": 440, "deep_min": 70},
+  "flags": [],
+  "journal": ["late_meal"],
+  "recovery_drivers": {"hrv": 32, "resting_hr": 55, "sleep": 88},
+  "known_effects": [{"tag": "alcohol", "next_day_recovery_change": -11.2, "days_with_tag": 9}],
+  "workouts": [{"date": "2026-10-28", "type": "strength_training", "duration_min": 45}]
 }
 ```
 This keeps prompts fast and grounded, and it reduces hallucinated numbers.
@@ -329,27 +337,26 @@ holds up syncing.
 ## 9. Backend API (FastAPI)
 
 ```
-GET  /api/health                         app + db + ollama + google status
+GET  /api/health                          app + db + ollama + google status
 GET  /api/auth/login | /api/auth/callback | /api/auth/status | POST /api/auth/logout
-GET/PUT /api/profile                     age, max HR, sleep need
-POST /api/sync            {types?, since?}   trigger sync (runs as background task)
-GET  /api/sync/status
-GET  /api/today                          scores + key metrics + latest brief
-GET  /api/daily?from&to                  daily_metrics + scores
-GET  /api/heart/intraday?date            HR series (downsampled server-side via LTTB if > N points)
-GET  /api/sleep?date | /api/sleep/range?from&to
-GET  /api/activity?date
-GET  /api/exercise?from&to
-GET  /api/trends?metric&window
-GET  /api/correlations
-GET/POST/DELETE /api/journal
-GET  /api/ai/insights?date&kind
-POST /api/ai/generate {kind, date}
-POST /api/ai/chat  (text/event-stream)
-GET  /api/ai/chat/{conversation_id}
-GET  /api/ai/status
-GET/PUT /api/settings                    app preferences (e.g. AI on/off)
+GET/PUT /api/profile                      age, max HR, sleep need
+POST /api/sync            {types?, since?} trigger sync (background); GET /api/sync/status
+GET  /api/today?date                      scores, flags, components, metrics, baseline bands
+GET  /api/daily?start&end                 daily metrics + scores per day
+GET  /api/trends?metric&days&end          daily series + baseline band
+GET  /api/heart?date&points               HR series (LTTB-downsampled), RHR, HRV, Google zones
+GET  /api/sleep?date | /api/sleep/range?start&end
+GET  /api/activity?date                   hourly steps/calories, levels, stress timeline, workouts
+GET  /api/exercise?start&end
+GET  /api/journal?start&end | PUT/DELETE /api/journal/{date} | GET /api/journal/tags
+GET  /api/correlations?outcome&days&end   tag effects with 95% CI
+GET  /api/ai/status | GET /api/ai/insights?date
+POST /api/ai/generate {kind, date}        background (re)generation
+POST /api/ai/chat  (text/event-stream)    GET /api/ai/chat/{conversation_id}
+GET  /api/export?intraday                 ZIP of CSV files
 ```
+
+Intraday series are `[epoch_ms, value]` pairs. Day-level dates are local days.
 
 ---
 
@@ -357,14 +364,17 @@ GET/PUT /api/settings                    app preferences (e.g. AI on/off)
 
 | Page | Contents |
 |---|---|
-| **Today** | Recovery / Sleep / Strain rings, strain target, AI brief + tips, flags |
-| **Heart** | Intraday HR (ECharts, zoomable), HRV, RHR trend, zones, AFib notifications |
-| **Sleep** | Hypnogram, stage %, SpO2 overnight, temp delta, consistency chart |
-| **Activity** | Steps/AZM/calories, sedentary periods, stress timeline, workouts list |
-| **Trends** | Any metric over 7/30/90/365 days vs baseline band |
-| **Journal** | Daily tags + notes; "what affects you" correlations |
-| **Coach** | Streaming chat with the local model |
-| **Settings** | Connect Google, sync status/backfill, Ollama status/model, profile (age, max HR, sleep need) |
+| **Today** | Recovery (large number + meter, High/Moderate/Low), sleep / strain (with target) / stress tiles, flags, activity tiles, "compared with your normal" table, recovery + sleep breakdowns, coach's brief (+ anomaly note, weekly review) |
+| **Heart** | Intraday HR with resting line, Google HR zones, 60-day resting HR and HRV trends |
+| **Sleep** | Hypnogram, minutes per stage, overnight SpO2 and HRV, breathing rate, skin temperature, last 14 nights |
+| **Activity** | Daily totals, steps by hour, minutes per activity level, stress timeline, workouts |
+| **Trends** | Any metric over 30/90/180/365 days vs baseline band |
+| **Journal** | Tag chips (presets + custom) and notes per day, "What affects you" table, last 14 days |
+| **Coach** | Streaming chat with the local model (can look up history via tools) |
+| **Settings** | Google connection, per-type sync status + backfill, profile, data download, system status |
+
+Charts: ECharts (tree-shaken, own chunk), reference dataviz palette as CSS tokens (light/dark),
+one y-axis per chart, hover tooltips, and a table view on every chart. Chart pages load lazily.
 
 Build output goes to `src/fitbit_app/static/` so the Python package serves it directly.
 
@@ -374,50 +384,35 @@ Build output goes to `src/fitbit_app/static/` so the Python package serves it di
 
 ```
 fitbit/
-├── project.md                 # this file
-├── task.md                    # implementation checklist
-├── README.md
+├── README.md · project.md · development-plan.md · task.md · CLAUDE.md
 ├── pyproject.toml             # deps + [project.scripts] fitbit = "fitbit_app.cli:app"
-├── .env.example
-├── alembic.ini
-├── data/                      # sqlite db + logs (gitignored)
+├── .env.example · alembic.ini
+├── data/                      # fitbit.db, logs/, backups/ (gitignored)
 ├── src/fitbit_app/
-│   ├── cli.py                 # Typer: serve, sync, analyze, brief, build-ui, doctor, db
-│   ├── config.py              # pydantic-settings
-│   ├── main.py                # FastAPI app factory, lifespan (scheduler start/stop), static mount
-│   ├── devserver.py           # spawns/stops Vite child process for --dev
-│   ├── api/                   # routers: auth, sync, today, heart, sleep, activity, trends, journal, ai, settings
-│   ├── ingest/
-│   │   ├── client.py          # GoogleHealthClient (httpx, retries, rate limit)
-│   │   ├── oauth.py
-│   │   ├── endpoints.py       # base URL + paths (from official docs)
-│   │   ├── scopes.py
-│   │   ├── registry.py        # data type → endpoint, granularity, normalizer, enabled
-│   │   └── sync.py            # SyncEngine
-│   ├── storage/
-│   │   ├── db.py              # engine/session, WAL pragma
-│   │   ├── models.py          # SQLAlchemy models
-│   │   ├── normalize.py       # raw data_points → typed tables
-│   │   └── migrations/        # alembic
-│   ├── analytics/             # baselines, sleep, recovery, strain, stress, anomaly, load, correlations, features
-│   ├── ai/
-│   │   ├── client.py          # Ollama wrapper
-│   │   ├── context.py         # feature pack builder
-│   │   ├── schemas.py         # pydantic output schemas
-│   │   ├── service.py         # brief, weekly, explainer, chat
-│   │   └── prompts/*.md
-│   ├── scheduler.py           # APScheduler job definitions
+│   ├── cli.py                 # Typer: serve, sync, analyze, brief, export, build-ui, doctor, db …
+│   ├── config.py              # pydantic-settings (.env)
+│   ├── main.py                # app factory, lifespan (DB, scheduler, services), SPA serving
+│   ├── devserver.py · doctor.py · logging_setup.py · errors.py
+│   ├── scheduler.py           # APScheduler: intraday sync /15 min, daily/sessions hourly
+│   ├── scoring.py             # ScoreService: per-day analytics pipeline
+│   ├── journal.py             # tag normalization, journal + correlation queries
+│   ├── api/                   # health, auth, sync, profile, dashboard, details, journal, ai, export
+│   ├── ingest/                # endpoints, scopes, registry, oauth, client, sync, service, timeutil
+│   ├── storage/               # db, models, types, migrate, migrations/, upsert, normalize,
+│   │                          # queries, export (CSV ZIP + backup)
+│   ├── analytics/             # baselines, sleep, recovery, strain, stress, anomaly, load,
+│   │                          # activity, correlations, downsample, features (all pure)
+│   ├── ai/                    # status, client (LLM), schemas, templates, prompts/*.md,
+│   │                          # context, tools, service
 │   └── static/                # built React app (gitignored)
-├── frontend/
-│   ├── package.json
-│   ├── vite.config.ts         # outDir ../src/fitbit_app/static, proxy /api → :8000
-│   └── src/{pages,components,api,hooks}/
-└── tests/                     # pytest: analytics (synthetic data), normalize, API
+├── frontend/src/              # pages/, components/ (charts/, settings/), api/, hooks/,
+│                              # format.ts, metrics.ts, navigation.ts
+└── tests/                     # mirrors src/; fixtures/ (synthetic data, fake Google API, fake LLM)
 ```
 
 ---
 
-## 12. Setup (once implemented)
+## 12. Setup
 
 ```bash
 python3.12 -m venv .venv
@@ -434,7 +429,11 @@ ollama pull qwen3.5:9b            # if not already present
 ## 13. Security and privacy
 - Binds to `127.0.0.1` by default. `--host 0.0.0.0` only when you choose to (e.g. over
   Tailscale).
-- `.env`, `data/` and tokens are gitignored. The DB file is created with permissions `0600`.
+- `.env`, `data/` (DB, logs, backups) and tokens are gitignored. The DB, backups and CLI
+  exports are created with permissions `0600`; the refresh token is Fernet-encrypted.
+- Logs never contain health values or tokens; OAuth `code`/`state` are redacted from access logs.
+- Exports contain health data but never credentials (`oauth_tokens` is excluded); the API
+  builds them in `data/` and deletes the temp file after sending.
 - The LLM is local. Do not use Ollama `*-cloud` models: they run remotely and would send
   health data off the machine. No health data is sent to any third party besides Google, which is the
   source of the data anyway.

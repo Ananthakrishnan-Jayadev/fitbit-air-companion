@@ -4,10 +4,22 @@ A local-first app for the Google Fitbit Air. It pulls your data from the Google 
 API, computes recovery/sleep/strain scores, and writes daily insights with a local Ollama
 model.
 
-- Architecture: [project.md](project.md)
-- Phases: [development-plan.md](development-plan.md)
-- Checklist: [task.md](task.md)
+- Architecture (as built): [project.md](project.md)
+- Original phase plan: [development-plan.md](development-plan.md)
+- Checklist + next steps: [task.md](task.md)
 - Build rules: [CLAUDE.md](CLAUDE.md)
+
+## What it does
+- **Syncs** everything the Fitbit Air exposes through the Google Health API (heart rate at
+  ~3 s resolution, HRV, SpO2, breathing rate, skin temperature, sleep stages, activity,
+  workouts), 90 days back, then every 15 min / hourly. Stored locally in SQLite.
+- **Scores** each day against your own 30-day baseline: recovery, sleep, strain (with a
+  daily target), stress, and illness / overreach warnings.
+- **Pages:** Today, Heart, Sleep, Activity, Trends, Journal ("what affects you"), Coach,
+  Settings. Every chart has a table view.
+- **Local AI coach** (Ollama, default `qwen3.5:9b`): daily brief, weekly review, anomaly
+  notes, and a chat that can look up your history. It sees summaries only, never raw data,
+  and nothing leaves your machine except the Google sync itself.
 
 ## Requirements
 - Python 3.12+
@@ -24,6 +36,11 @@ npm --prefix frontend install
 cp .env.example .env              # then fill in values
 ollama pull qwen3.5:9b            # if not already present
 ```
+
+**Google access (one-time):** create a Google Cloud project with the Google Health API, a
+*Web application* OAuth client and yourself as a test user, then put the client ID/secret and
+a `FITBIT_SECRET_KEY` in `.env`. Step-by-step: [project.md §5.1](project.md#51-setup-one-time-manual).
+Then run `fitbit serve` and use **Settings → Connect Google**.
 
 ## Run (one terminal)
 

@@ -1,5 +1,16 @@
 # Development Plan
 
+> **Status (2026-10-29): all five phases are complete and verified on real data.**
+> This file is the original plan. Where the build differs, [project.md](project.md) describes
+> what was built and [task.md](task.md) has the detailed checklist. Notable differences:
+> - Endpoints: `/api/heart` (not `/api/heart/intraday`), `/api/ai/generate` (not
+>   `/api/ai/brief/regenerate`); no `/api/settings` (profile lives at `/api/profile`).
+> - AI insights are triggered after each sync instead of at fixed 09:00 times.
+> - Today shows a recovery number + meter and tiles, not rings.
+> - Coach tools are `get_metric_history`, `get_day_summary`, `get_journal`, `get_tag_effects`.
+> - Export is CSV only (Parquet would need a new dependency).
+> - Heart page has no AFib notification view yet (no notifications in the data to design for).
+
 Five phases, each ending in something you can open and use. Architecture is in
 [project.md](project.md), checkbox-level tasks are in [task.md](task.md), and build rules are in
 [CLAUDE.md](CLAUDE.md).
