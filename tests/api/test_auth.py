@@ -61,9 +61,7 @@ def test_callback_success(gclient: TestClient, started: list[dict]) -> None:
         respx.get(IDENTITY_URL).mock(
             return_value=httpx.Response(200, json={"healthUserId": "user-1"})
         )
-        response = gclient.get(
-            f"/api/auth/callback?code=abc&state={state}", follow_redirects=False
-        )
+        response = gclient.get(f"/api/auth/callback?code=abc&state={state}", follow_redirects=False)
 
     assert response.status_code == 303
     assert response.headers["location"] == "/settings?connected=1"
@@ -104,9 +102,7 @@ def test_callback_account_not_linked(gclient: TestClient, started: list[dict]) -
                 400, json=api_error(400, "FAILED_PRECONDITION", "x", "ACCOUNT_NOT_LINKED")
             )
         )
-        response = gclient.get(
-            f"/api/auth/callback?code=abc&state={state}", follow_redirects=False
-        )
+        response = gclient.get(f"/api/auth/callback?code=abc&state={state}", follow_redirects=False)
     assert response.headers["location"] == "/settings?auth_error=account_not_linked"
     assert gclient.get("/api/auth/status").json()["connected"] is False
     assert started == []
@@ -118,9 +114,7 @@ def test_callback_exchange_failure(gclient: TestClient) -> None:
         respx.post(TOKEN_URL).mock(
             return_value=httpx.Response(400, json={"error": "invalid_grant"})
         )
-        response = gclient.get(
-            f"/api/auth/callback?code=abc&state={state}", follow_redirects=False
-        )
+        response = gclient.get(f"/api/auth/callback?code=abc&state={state}", follow_redirects=False)
     assert response.headers["location"] == "/settings?auth_error=exchange_failed"
 
 

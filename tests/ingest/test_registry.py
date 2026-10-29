@@ -37,7 +37,7 @@ def test_rollup_ranges_fit_the_14_day_limit() -> None:
 
 
 def test_every_kind_is_scheduled() -> None:
-    assert FAST_KINDS | SLOW_KINDS == set(RecordKind)
+    assert set(RecordKind) == FAST_KINDS | SLOW_KINDS
 
 
 def test_heart_rate_is_typed_only() -> None:
