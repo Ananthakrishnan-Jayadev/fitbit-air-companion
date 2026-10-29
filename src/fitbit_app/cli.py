@@ -51,7 +51,9 @@ def serve(
             raise typer.Exit(1) from exc
         typer.secho(f"Dev UI (hot reload): {VITE_URL}", fg=typer.colors.CYAN)
     elif not (settings.static_dir / "index.html").is_file():
-        typer.secho("UI not built yet; run `fitbit build-ui` (API still works).", fg=typer.colors.YELLOW)
+        typer.secho(
+            "UI not built yet; run `fitbit build-ui` (API still works).", fg=typer.colors.YELLOW
+        )
 
     typer.secho(f"App: http://{host}:{port}", fg=typer.colors.CYAN)
     try:

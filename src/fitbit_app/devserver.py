@@ -22,7 +22,9 @@ def start_vite(frontend_dir: Path, api_port: int) -> subprocess.Popen[str]:
     if npm is None:
         raise ConfigError("npm not found on PATH; install Node.js to use --dev")
     if not (frontend_dir / "node_modules").is_dir():
-        raise ConfigError(f"Frontend dependencies missing. Run: npm --prefix {frontend_dir} install")
+        raise ConfigError(
+            f"Frontend dependencies missing. Run: npm --prefix {frontend_dir} install"
+        )
 
     proc = subprocess.Popen(
         [npm, "run", "dev"],
