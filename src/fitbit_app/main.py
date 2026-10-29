@@ -12,7 +12,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse, Response
 
 from fitbit_app import __version__
-from fitbit_app.api import auth, dashboard, details, health, profile, sync
+from fitbit_app.ai.service import AIService
+from fitbit_app.api import ai, auth, dashboard, details, health, profile, sync
 from fitbit_app.config import Settings, get_settings
 from fitbit_app.ingest.service import SyncService
 from fitbit_app.scheduler import create_scheduler
@@ -41,14 +42,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         await asyncio.to_thread(upgrade_to_head, engine)
         session_factory = create_session_factory(engine)
         score_service = ScoreService(session_factory)
+        ai_service = AIService(settings, session_factory)
 
         async def rescore(_: object) -> None:
             await asyncio.to_thread(score_service.recompute_after_sync)
+            # Briefs run in the background so a slow model never holds up syncing.
+            ai_service.start_after_sync()
 
         sync_service = SyncService(settings, session_factory, after_sync=rescore)
         app.state.engine = engine
         app.state.session_factory = session_factory
         app.state.score_service = score_service
+        app.state.ai_service = ai_service
         app.state.sync_service = sync_service
         app.state.oauth_pending = {}
         logger.info("Database ready at %s", settings.db_path)
@@ -64,11 +69,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             if scheduler is not None:
                 scheduler.shutdown(wait=False)
             await sync_service.shutdown()
+            await ai_service.shutdown()
             engine.dispose()
 
     app = FastAPI(title="Fitbit Air Companion", version=__version__, lifespan=lifespan)
     app.state.settings = settings
-    for module in (health, auth, sync, profile, dashboard, details):
+    for module in (health, auth, sync, profile, dashboard, details, ai):
         app.include_router(module.router, prefix="/api")
     _mount_frontend(app, settings.static_dir)
     return app

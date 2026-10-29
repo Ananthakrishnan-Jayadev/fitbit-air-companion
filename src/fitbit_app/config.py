@@ -46,6 +46,8 @@ class Settings(BaseSettings):
     ollama_fallback_model: str | None = None
     ollama_timeout_s: float = 300.0
     ollama_num_ctx: int = 16384
+    # Reasoning ("thinking") mode for models that support it. Slower; off by default.
+    ollama_think: bool = False
 
     @property
     def db_path(self) -> Path:

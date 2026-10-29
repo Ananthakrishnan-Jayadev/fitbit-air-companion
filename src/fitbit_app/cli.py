@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime as dt
+import json
 import shutil
 import subprocess
 from typing import Annotated
@@ -11,6 +12,8 @@ from typing import Annotated
 import typer
 import uvicorn
 
+from fitbit_app.ai.context import latest_scored_day
+from fitbit_app.ai.service import KINDS, AIService
 from fitbit_app.config import Settings, get_settings
 from fitbit_app.devserver import VITE_URL, start_vite, stop_vite
 from fitbit_app.doctor import Level, run_checks
@@ -145,11 +148,6 @@ def db_renormalize(
     typer.secho("Typed tables rebuilt from raw data.", fg=typer.colors.GREEN)
 
 
-def _not_yet(phase: int) -> None:
-    typer.secho(f"Not implemented yet (Phase {phase}).", fg=typer.colors.YELLOW)
-    raise typer.Exit(1)
-
-
 @app.command()
 def sync(
     since: Annotated[
@@ -223,6 +221,39 @@ def analyze(
 
 
 @app.command()
-def brief() -> None:
-    """Regenerate the AI daily brief (Phase 4)."""
-    _not_yet(4)
+def brief(
+    day: Annotated[
+        dt.datetime | None,
+        typer.Option("--date", formats=["%Y-%m-%d"], help="Day (default: latest scored day)"),
+    ] = None,
+    kind: Annotated[str, typer.Option(help=f"One of: {', '.join(KINDS)}")] = "daily_brief",
+    force: Annotated[bool, typer.Option("--force", help="Regenerate even if unchanged")] = False,
+) -> None:
+    """Generate an AI insight with the local model and print it."""
+    if kind not in KINDS:
+        typer.secho(f"--kind must be one of: {', '.join(KINDS)}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(1)
+    settings = get_settings()
+    configure_logging(settings.log_level)
+    engine = create_db_engine(settings.db_path)
+    try:
+        upgrade_to_head(engine)
+        session_factory = create_session_factory(engine)
+        with session_factory() as session:
+            target = day.date() if day else latest_scored_day(session)
+        if target is None:
+            typer.secho("No scored days yet; run `fitbit analyze` first.", fg=typer.colors.RED)
+            raise typer.Exit(1)
+        service = AIService(settings, session_factory)
+        try:
+            insight = asyncio.run(service.generate(kind, target, force=force))
+        except FitbitAppError as exc:
+            typer.secho(str(exc), fg=typer.colors.RED, err=True)
+            raise typer.Exit(1) from exc
+    finally:
+        engine.dispose()
+    if insight is None:
+        typer.secho(f"Not enough data for a {kind} on {target}.", fg=typer.colors.YELLOW)
+        raise typer.Exit(1)
+    typer.secho(f"{kind} for {target} ({insight.model})", bold=True)
+    typer.echo(json.dumps(insight.content, indent=2, ensure_ascii=False))

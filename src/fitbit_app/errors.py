@@ -28,3 +28,11 @@ class GoogleApiError(FitbitAppError):
         super().__init__(f"Google Health API error {status_code} ({reason}): {message}")
         self.status_code = status_code
         self.reason = reason
+
+
+class AIUnavailableError(FitbitAppError):
+    """AI is disabled, Ollama is unreachable, or no usable model is installed."""
+
+
+class AIResponseError(FitbitAppError):
+    """The model's answer could not be parsed or validated."""

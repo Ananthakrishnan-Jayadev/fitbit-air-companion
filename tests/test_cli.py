@@ -47,10 +47,15 @@ def test_db_upgrade(settings: Settings) -> None:
         engine.dispose()
 
 
-def test_brief_is_stubbed_until_phase_4() -> None:
+def test_brief_needs_scored_days() -> None:
     result = runner.invoke(cli_module.app, ["brief"])
     assert result.exit_code == 1
-    assert "Phase 4" in result.output
+    assert "No scored days yet" in result.output
+
+
+def test_brief_rejects_unknown_kind() -> None:
+    result = runner.invoke(cli_module.app, ["brief", "--kind", "poem"])
+    assert result.exit_code == 1
 
 
 @pytest.mark.parametrize(
