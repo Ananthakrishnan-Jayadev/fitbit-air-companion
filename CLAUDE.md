@@ -85,8 +85,10 @@ Areas: `cli`, `api`, `ingest`, `storage`, `analytics`, `ai`, `scheduler`, `front
   (`list[int]`, `X | None`).
 - Format and lint with **ruff** (line length 100). Code should pass `ruff check` and `ruff format`.
 - Naming: `snake_case` functions/modules, `PascalCase` classes, `UPPER_SNAKE` constants.
-- **Async** for all I/O (httpx, Ollama, DB access from request handlers). Never block the event
-  loop. Run CPU-heavy pandas work via `asyncio.to_thread`.
+- **Async** for network I/O (httpx, Ollama). Never block the event loop. The DB layer is
+  synchronous SQLAlchemy: use it from FastAPI `def` handlers (threadpool) or via
+  `asyncio.to_thread`, never directly inside `async def`. Run CPU-heavy pandas work via
+  `asyncio.to_thread` too.
 - **Analytics modules are pure functions**: DataFrame/values in, results out, with no DB,
   network, or clock access. Pass "today" in explicitly.
 - Settings only through `config.py` (pydantic-settings). No `os.environ` reads elsewhere and no
