@@ -13,7 +13,6 @@ dependencies = [
     "uvicorn[standard]>=0.32",
     "typer>=0.15",
     "httpx>=0.28",
-    "authlib>=1.4",
     "sqlalchemy>=2.0.36",
     "alembic>=1.14",
     "pydantic>=2.10",

@@ -12,9 +12,11 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse, Response
 
 from fitbit_app import __version__
-from fitbit_app.api import health
+from fitbit_app.api import auth, health, profile, sync
 from fitbit_app.config import Settings, get_settings
-from fitbit_app.storage.db import create_db_engine
+from fitbit_app.ingest.service import SyncService
+from fitbit_app.scheduler import create_scheduler
+from fitbit_app.storage.db import create_db_engine, create_session_factory
 from fitbit_app.storage.migrate import upgrade_to_head
 
 logger = logging.getLogger(__name__)
@@ -36,16 +38,31 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         engine = create_db_engine(settings.db_path)
         await asyncio.to_thread(upgrade_to_head, engine)
+        session_factory = create_session_factory(engine)
+        sync_service = SyncService(settings, session_factory)
         app.state.engine = engine
+        app.state.session_factory = session_factory
+        app.state.sync_service = sync_service
+        app.state.oauth_pending = {}
         logger.info("Database ready at %s", settings.db_path)
+
+        scheduler = None
+        if settings.scheduler_enabled and settings.google_configured:
+            scheduler = create_scheduler(settings, sync_service)
+            scheduler.start()
+            logger.info("Background sync every %d min", settings.sync_interval_min)
         try:
             yield
         finally:
+            if scheduler is not None:
+                scheduler.shutdown(wait=False)
+            await sync_service.shutdown()
             engine.dispose()
 
     app = FastAPI(title="Fitbit Air Companion", version=__version__, lifespan=lifespan)
     app.state.settings = settings
-    app.include_router(health.router, prefix="/api")
+    for module in (health, auth, sync, profile):
+        app.include_router(module.router, prefix="/api")
     _mount_frontend(app, settings.static_dir)
     return app
 

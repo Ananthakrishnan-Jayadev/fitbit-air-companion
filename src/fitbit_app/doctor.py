@@ -11,7 +11,8 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from fitbit_app.ai.status import check_ollama
 from fitbit_app.config import ENV_FILE, Settings
-from fitbit_app.storage.db import create_db_engine, ping
+from fitbit_app.ingest.oauth import TokenStore
+from fitbit_app.storage.db import create_db_engine, create_session_factory, ping
 from fitbit_app.storage.migrate import current_revision, head_revision
 
 
@@ -34,6 +35,7 @@ async def run_checks(settings: Settings) -> list[CheckResult]:
         _check_google(settings),
         _check_secret_key(settings),
         await asyncio.to_thread(_check_database, settings),
+        await asyncio.to_thread(_check_google_connection, settings),
         _check_frontend(settings),
         await _check_ollama(settings),
     ]
@@ -83,6 +85,26 @@ def _check_database(settings: Settings) -> CheckResult:
             "Database", Level.WARN, f"Schema at {current}, latest is {head}. Run: fitbit db upgrade"
         )
     return CheckResult("Database", Level.OK, f"{path} (schema {current})")
+
+
+def _check_google_connection(settings: Settings) -> CheckResult:
+    name = "Google connection"
+    if not settings.db_path.exists():
+        return CheckResult(name, Level.WARN, "Not connected (no database yet)")
+    engine = create_db_engine(settings.db_path)
+    try:
+        if current_revision(engine) != head_revision():
+            return CheckResult(name, Level.WARN, "Unknown until the database is upgraded")
+        stored = TokenStore(create_session_factory(engine), settings.fitbit_secret_key).load()
+    except SQLAlchemyError as exc:
+        return CheckResult(name, Level.WARN, f"Cannot read tokens: {type(exc).__name__}")
+    finally:
+        engine.dispose()
+    if stored is None:
+        return CheckResult(name, Level.WARN, "Not connected. Settings → Connect Google")
+    if stored.needs_reauth:
+        return CheckResult(name, Level.WARN, "Expired or revoked. Settings → Reconnect")
+    return CheckResult(name, Level.OK, "Connected")
 
 
 def _check_frontend(settings: Settings) -> CheckResult:

@@ -16,6 +16,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    false,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -54,6 +55,8 @@ class OAuthToken(Base):
     token_type: Mapped[str] = mapped_column(String(32))
     scope: Mapped[str] = mapped_column(Text)
     expires_at: Mapped[dt.datetime]
+    health_user_id: Mapped[str | None] = mapped_column(String(63))
+    needs_reauth: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     updated_at: Mapped[dt.datetime] = mapped_column(default=utcnow, onupdate=utcnow)
 
 
@@ -63,7 +66,9 @@ class SyncState(Base):
     __tablename__ = "sync_state"
 
     data_type: Mapped[str] = mapped_column(String(64), primary_key=True)
+    # Synced range is [synced_from, cursor): cursor moves forward, synced_from backward.
     cursor: Mapped[dt.datetime | None]
+    synced_from: Mapped[dt.datetime | None]
     last_attempt_at: Mapped[dt.datetime | None]
     last_success_at: Mapped[dt.datetime | None]
     last_error_at: Mapped[dt.datetime | None]
@@ -94,6 +99,8 @@ class HrSample(Base):
 
     ts: Mapped[dt.datetime] = mapped_column(primary_key=True)
     bpm: Mapped[int] = mapped_column(Integer)
+    # Google's metadata.motionContext, e.g. SEDENTARY / ACTIVE.
+    motion_context: Mapped[str | None] = mapped_column(String(32))
 
 
 class HrvSample(Base):
@@ -179,6 +186,7 @@ class DailyMetric(Base):
     spo2_avg: Mapped[float | None] = mapped_column(Float)
     spo2_min: Mapped[float | None] = mapped_column(Float)
     skin_temp_delta_c: Mapped[float | None] = mapped_column(Float)
+    respiratory_rate: Mapped[float | None] = mapped_column(Float)
     steps: Mapped[int | None] = mapped_column(Integer)
     distance_m: Mapped[float | None] = mapped_column(Float)
     active_zone_minutes: Mapped[int | None] = mapped_column(Integer)
@@ -219,6 +227,18 @@ class Score(Base):
 
 
 # --- User input & AI ---------------------------------------------------------------------
+
+
+class UserProfile(Base):
+    """Profile values used by scoring. Single row (id=1)."""
+
+    __tablename__ = "user_profile"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    age: Mapped[int | None] = mapped_column(Integer)
+    max_hr: Mapped[int | None] = mapped_column(Integer)
+    sleep_need_min: Mapped[int | None] = mapped_column(Integer)
+    updated_at: Mapped[dt.datetime] = mapped_column(default=utcnow, onupdate=utcnow)
 
 
 class JournalEntry(Base):

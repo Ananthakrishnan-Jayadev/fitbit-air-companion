@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import datetime as dt
 import shutil
 import subprocess
 from typing import Annotated
@@ -10,13 +11,15 @@ from typing import Annotated
 import typer
 import uvicorn
 
-from fitbit_app.config import get_settings
+from fitbit_app.config import Settings, get_settings
 from fitbit_app.devserver import VITE_URL, start_vite, stop_vite
 from fitbit_app.doctor import Level, run_checks
-from fitbit_app.errors import ConfigError
+from fitbit_app.errors import ConfigError, FitbitAppError
+from fitbit_app.ingest.service import SyncService
+from fitbit_app.ingest.sync import SyncReport
 from fitbit_app.logging_setup import configure_logging
 from fitbit_app.main import create_app
-from fitbit_app.storage.db import create_db_engine
+from fitbit_app.storage.db import create_db_engine, create_session_factory
 from fitbit_app.storage.migrate import upgrade_to_head
 
 app = typer.Typer(no_args_is_help=True, help="Fitbit Air companion app.")
@@ -115,9 +118,43 @@ def _not_yet(phase: int) -> None:
 
 
 @app.command()
-def sync() -> None:
-    """Sync data from the Google Health API (Phase 2)."""
-    _not_yet(2)
+def sync(
+    since: Annotated[
+        dt.datetime | None,
+        typer.Option(formats=["%Y-%m-%d"], help="Backfill back to this date (YYYY-MM-DD)"),
+    ] = None,
+    types: Annotated[
+        str | None, typer.Option(help="Comma-separated data types, e.g. heart-rate,sleep")
+    ] = None,
+) -> None:
+    """Sync data from the Google Health API now (the server also syncs on a schedule)."""
+    settings = get_settings()
+    configure_logging(settings.log_level)
+    keys = [t.strip() for t in types.split(",") if t.strip()] if types else None
+    try:
+        report = asyncio.run(_run_sync(settings, keys, since.date() if since else None))
+    except (FitbitAppError, ValueError) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(1) from exc
+
+    total = sum(report.points.values())
+    typer.secho(f"Synced {len(report.ok)} data types, {total} points.", fg=typer.colors.GREEN)
+    for key, message in report.failed.items():
+        typer.secho(f"  failed {key}: {message}", fg=typer.colors.RED)
+    if report.failed:
+        raise typer.Exit(1)
+
+
+async def _run_sync(
+    settings: Settings, keys: list[str] | None, since: dt.date | None
+) -> SyncReport:
+    engine = create_db_engine(settings.db_path)
+    try:
+        await asyncio.to_thread(upgrade_to_head, engine)
+        service = SyncService(settings, create_session_factory(engine))
+        return await service.run(keys=keys, since=since)
+    finally:
+        engine.dispose()
 
 
 @app.command()

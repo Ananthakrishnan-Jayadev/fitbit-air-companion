@@ -27,10 +27,17 @@ class Settings(BaseSettings):
     # Google Health API
     google_client_id: str = ""
     google_client_secret: SecretStr = SecretStr("")
+    google_redirect_uri: str = "http://127.0.0.1:8000/api/auth/callback"
     fitbit_secret_key: SecretStr = SecretStr("")
 
     # Sync
     sync_interval_min: int = 15
+    backfill_days: int = 90
+    # Unverified (Testing-mode) apps get 2.5 QPS per user; stay under it.
+    sync_requests_per_s: float = 2.0
+    scheduler_enabled: bool = True
+    # v4beta data types (e.g. skin-temperature-sensors) are opt-in.
+    enable_beta_types: bool = False
 
     # Local AI
     ai_enabled: bool = True
@@ -47,6 +54,10 @@ class Settings(BaseSettings):
     @property
     def google_configured(self) -> bool:
         return bool(self.google_client_id and self.google_client_secret.get_secret_value())
+
+    @property
+    def secret_key_configured(self) -> bool:
+        return bool(self.fitbit_secret_key.get_secret_value())
 
 
 @lru_cache
