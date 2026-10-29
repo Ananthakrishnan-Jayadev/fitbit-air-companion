@@ -140,7 +140,7 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done
 - [x] UI: coach's brief (+ anomaly note, weekly review) on **Today**, **Coach** chat page
 - [x] Graceful degradation when Ollama is down / `AI_ENABLED=false`
 - [x] pytest: client (fake Ollama), templates, context, service, API incl. SSE (fake LLM)
-- [ ] **You:** run checks, then try a real brief (`fitbit brief`) and the Coach page
+- [x] **You:** run checks, then try a real brief (`fitbit brief`) and the Coach page
 
 ---
 
@@ -159,10 +159,16 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done
 - [x] Global "reconnect Google" banner; `doctor` data-freshness check; README troubleshooting
 - [x] Frontend code splitting (lazy chart pages, separate ECharts chunk)
 - [x] pytest: correlations, journal API, tools, export/backup, log file
-- [ ] **You:** run checks; try the Journal, a coach question about older data
+- [x] **You:** run checks; try the Journal, a coach question about older data
       ("How was my HRV in September?"), and an export
 
 ---
+
+## Possible next steps
+- [ ] Brief accuracy: give the model precomputed comparisons (e.g. strain vs yesterday) and
+      check that every number in a brief appears in its input data
+- [ ] AFib (irregular rhythm) notifications on the Heart page once one exists in the data
+- [ ] `httpx2` dev dependency for Starlette's TestClient (warning currently filtered)
 
 ## Not planned
 - Direct Bluetooth / Option C. Documented as research only in project.md §15.
