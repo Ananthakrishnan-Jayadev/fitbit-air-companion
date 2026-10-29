@@ -19,44 +19,44 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done
 
 ## Phase 1: Foundation
 ### Tooling
-- [ ] `pyproject.toml`: package `fitbit_app` (src layout), Python ≥3.12, deps (fastapi,
+- [x] `pyproject.toml`: package `fitbit_app` (src layout), Python ≥3.12, deps (fastapi,
       uvicorn[standard], typer, httpx, authlib, sqlalchemy, alembic, pydantic-settings,
       apscheduler, pandas, numpy, ollama, jinja2, cryptography), dev extras (pytest,
       pytest-asyncio, respx, ruff)
-- [ ] `[project.scripts] fitbit = "fitbit_app.cli:app"`
-- [ ] `.env.example` with all settings (Google, Ollama, paths, sync intervals)
-- [ ] `README.md` with setup steps (project.md §12)
-- [ ] ruff config, pytest config
+- [x] `[project.scripts] fitbit = "fitbit_app.cli:app"`
+- [x] `.env.example` with all settings (Google, Ollama, paths, sync intervals)
+- [x] `README.md` with setup steps (project.md §12)
+- [x] ruff config, pytest config
 
 ### Backend skeleton
-- [ ] `config.py`: pydantic-settings (`GOOGLE_CLIENT_ID/SECRET`, `FITBIT_SECRET_KEY`,
+- [x] `config.py`: pydantic-settings (`GOOGLE_CLIENT_ID/SECRET`, `FITBIT_SECRET_KEY`,
       `OLLAMA_HOST`, `OLLAMA_MODEL=gemma4:31b`, `OLLAMA_FALLBACK_MODEL`, `DATA_DIR`, `HOST`,
       `PORT`, `SYNC_INTERVAL_MIN`, `AI_ENABLED`)
-- [ ] `errors.py` (exception hierarchy) + logging setup
-- [ ] `main.py`: app factory, lifespan hooks, `/api/health`, static mount with SPA fallback
-- [ ] `cli.py` (Typer): `serve`, `build-ui`, `doctor`, `db upgrade` (other commands are
+- [x] `errors.py` (exception hierarchy) + logging setup
+- [x] `main.py`: app factory, lifespan hooks, `/api/health`, static mount with SPA fallback
+- [x] `cli.py` (Typer): `serve`, `build-ui`, `doctor`, `db upgrade` (other commands are
       stubbed until their phase)
-- [ ] `serve`: uvicorn programmatically; warn if `static/` missing
-- [ ] `devserver.py`: `serve --dev` spawns `npm --prefix frontend run dev`, prefixes output,
+- [x] `serve`: uvicorn programmatically; warn if `static/` missing
+- [x] `devserver.py`: `serve --dev` spawns `npm --prefix frontend run dev`, prefixes output,
       terminates on shutdown/Ctrl+C
-- [ ] `doctor`: `.env`, DB writable, Ollama reachable + model present (Google check in Phase 2)
+- [x] `doctor`: `.env`, DB writable, Ollama reachable + model present (Google check in Phase 2)
 
 ### Storage
-- [ ] `storage/db.py`: engine/session, WAL + foreign keys, file mode 0600
-- [ ] `storage/models.py`: all tables from project.md §6
-- [ ] Alembic setup + initial migration
-- [ ] Upsert helpers (idempotent on natural keys)
+- [x] `storage/db.py`: engine/session, WAL + foreign keys, file mode 0600
+- [x] `storage/models.py`: all tables from project.md §6
+- [x] Alembic setup + initial migration
+- [x] Upsert helpers (idempotent on natural keys)
 
 ### Frontend shell
-- [ ] Scaffold `frontend/` (Vite React-TS), Tailwind, React Router, TanStack Query, ECharts
-- [ ] `vite.config.ts`: `outDir: ../src/fitbit_app/static`, dev proxy `/api` → `:8000`
-- [ ] Typed API client (`src/api/`)
-- [ ] Layout + nav with placeholder pages (Today, Heart, Sleep, Activity, Trends, Journal,
+- [x] Scaffold `frontend/` (Vite React-TS), Tailwind, React Router, TanStack Query, ECharts
+- [x] `vite.config.ts`: `outDir: ../src/fitbit_app/static`, dev proxy `/api` → `:8000`
+- [x] Typed API client (`src/api/`)
+- [x] Layout + nav with placeholder pages (Today, Heart, Sleep, Activity, Trends, Journal,
       Coach, Settings)
 
 ### Tests
-- [ ] `tests/fixtures/`: synthetic data generator (HR, HRV, SpO2, sleep, activity days)
-- [ ] pytest: config, `/api/health`, DB/migration, `doctor` (Ollama mocked)
+- [x] `tests/fixtures/`: synthetic data generator (HR, HRV, SpO2, sleep, activity days)
+- [x] pytest: config, `/api/health`, DB/migration, `doctor` (Ollama mocked)
 
 ---
 
