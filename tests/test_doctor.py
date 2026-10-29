@@ -13,6 +13,8 @@ from fitbit_app.doctor import CheckResult, Level, run_checks
 from fitbit_app.ingest.oauth import TokenSet, TokenStore
 from fitbit_app.storage.db import create_db_engine, create_session_factory
 from fitbit_app.storage.migrate import upgrade_to_head
+from fitbit_app.storage.models import SyncState
+from fitbit_app.storage.types import utcnow
 
 
 def _by_name(results: list[CheckResult]) -> dict[str, CheckResult]:
@@ -34,6 +36,7 @@ async def test_fresh_setup_only_warns(settings: Settings) -> None:
     assert results["Google OAuth"].level is Level.WARN
     assert results["Database"].level is Level.WARN
     assert results["Google connection"].level is Level.WARN
+    assert results["Data freshness"].level is Level.WARN
     assert results["Frontend build"].level is Level.WARN
     assert results["Ollama"].level is Level.WARN  # AI disabled in the fixture
 
@@ -45,9 +48,13 @@ async def test_fully_configured_is_ok(
     (settings.static_dir / "index.html").write_text("<html></html>")
     engine = create_db_engine(settings.db_path)
     upgrade_to_head(engine)
-    TokenStore(create_session_factory(engine), settings.fitbit_secret_key).save(
+    session_factory = create_session_factory(engine)
+    TokenStore(session_factory, settings.fitbit_secret_key).save(
         TokenSet("a", "r", dt.datetime(2030, 1, 1, tzinfo=dt.UTC), "", "Bearer")
     )
+    with session_factory() as session:
+        session.add(SyncState(data_type="steps", last_success_at=utcnow()))
+        session.commit()
     engine.dispose()
     monkeypatch.setattr(doctor_module, "check_ollama", _fake_ollama(True, True))
     configured = settings.model_copy(
@@ -87,3 +94,16 @@ async def test_ollama_problems_are_warnings(
     monkeypatch.setattr(doctor_module, "check_ollama", _fake_ollama(reachable, present))
     enabled = settings.model_copy(update={"ai_enabled": True})
     assert _by_name(await run_checks(enabled))["Ollama"].level is Level.WARN
+
+
+async def test_stale_data_warns(settings: Settings) -> None:
+    engine = create_db_engine(settings.db_path)
+    upgrade_to_head(engine)
+    with create_session_factory(engine)() as session:
+        old = utcnow() - dt.timedelta(days=3)
+        session.add(SyncState(data_type="steps", last_success_at=old))
+        session.commit()
+    engine.dispose()
+    result = _by_name(await run_checks(settings))["Data freshness"]
+    assert result.level is Level.WARN
+    assert "72 h ago" in result.detail

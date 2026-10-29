@@ -5,8 +5,10 @@ from __future__ import annotations
 import asyncio
 import datetime as dt
 import json
+import os
 import shutil
 import subprocess
+from pathlib import Path
 from typing import Annotated
 
 import typer
@@ -25,6 +27,7 @@ from fitbit_app.logging_setup import configure_logging
 from fitbit_app.main import create_app
 from fitbit_app.scoring import ScoreService
 from fitbit_app.storage.db import create_db_engine, create_session_factory
+from fitbit_app.storage.export import backup_database, write_export
 from fitbit_app.storage.migrate import upgrade_to_head
 from fitbit_app.storage.normalize import renormalize
 
@@ -47,7 +50,7 @@ def serve(
 ) -> None:
     """Run the API, UI and background jobs in this terminal."""
     settings = get_settings()
-    configure_logging(settings.log_level)
+    configure_logging(settings.log_level, settings.log_dir)
     host = host or settings.host
     port = port or settings.port
 
@@ -109,13 +112,48 @@ def doctor() -> None:
 def db_upgrade() -> None:
     """Apply database migrations."""
     settings = get_settings()
-    configure_logging(settings.log_level)
+    configure_logging(settings.log_level, settings.log_dir)
     engine = create_db_engine(settings.db_path)
     try:
         upgrade_to_head(engine)
     finally:
         engine.dispose()
     typer.secho(f"Database up to date: {settings.db_path}", fg=typer.colors.GREEN)
+
+
+@db_app.command("backup")
+def db_backup(
+    out: Annotated[
+        Path | None, typer.Option(help="Directory for the backup (default: data/backups)")
+    ] = None,
+) -> None:
+    """Copy the database to a timestamped file (safe while the server runs)."""
+    settings = get_settings()
+    if not settings.db_path.exists():
+        typer.secho(f"No database at {settings.db_path}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(1)
+    target = backup_database(settings.db_path, out or settings.backup_dir)
+    typer.secho(f"Backed up to {target}", fg=typer.colors.GREEN)
+
+
+@app.command("export")
+def export_data(
+    out: Annotated[Path, typer.Option(help="ZIP file to write")] = Path("fitbit-export.zip"),
+    intraday: Annotated[
+        bool, typer.Option("--intraday", help="Include heart rate, HRV, SpO2 and per-minute data")
+    ] = False,
+) -> None:
+    """Export your data as a ZIP of CSV files."""
+    settings = get_settings()
+    engine = create_db_engine(settings.db_path)
+    try:
+        upgrade_to_head(engine)
+        with create_session_factory(engine)() as session, out.open("wb") as target:
+            files = write_export(session, target, include_intraday=intraday)
+    finally:
+        engine.dispose()
+    os.chmod(out, 0o600)
+    typer.secho(f"Wrote {out} ({len(files)} tables)", fg=typer.colors.GREEN)
 
 
 @db_app.command("renormalize")
@@ -126,7 +164,7 @@ def db_renormalize(
 ) -> None:
     """Rebuild typed tables from stored raw JSON (no download)."""
     settings = get_settings()
-    configure_logging(settings.log_level)
+    configure_logging(settings.log_level, settings.log_dir)
     keys = [t.strip() for t in types.split(",") if t.strip()] if types else None
     try:
         specs = select_specs(include_beta=settings.enable_beta_types, keys=keys)
@@ -160,7 +198,7 @@ def sync(
 ) -> None:
     """Sync data from the Google Health API now (the server also syncs on a schedule)."""
     settings = get_settings()
-    configure_logging(settings.log_level)
+    configure_logging(settings.log_level, settings.log_dir)
     keys = [t.strip() for t in types.split(",") if t.strip()] if types else None
     try:
         report = asyncio.run(_run_sync(settings, keys, since.date() if since else None))
@@ -204,7 +242,7 @@ def analyze(
 ) -> None:
     """Recompute scores, baselines and derived daily values from stored data."""
     settings = get_settings()
-    configure_logging(settings.log_level)
+    configure_logging(settings.log_level, settings.log_dir)
     engine = create_db_engine(settings.db_path)
     try:
         upgrade_to_head(engine)
@@ -234,7 +272,7 @@ def brief(
         typer.secho(f"--kind must be one of: {', '.join(KINDS)}", fg=typer.colors.RED, err=True)
         raise typer.Exit(1)
     settings = get_settings()
-    configure_logging(settings.log_level)
+    configure_logging(settings.log_level, settings.log_dir)
     engine = create_db_engine(settings.db_path)
     try:
         upgrade_to_head(engine)

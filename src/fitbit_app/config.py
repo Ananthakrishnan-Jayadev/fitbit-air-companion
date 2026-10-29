@@ -54,6 +54,14 @@ class Settings(BaseSettings):
         return self.data_dir / "fitbit.db"
 
     @property
+    def log_dir(self) -> Path:
+        return self.data_dir / "logs"
+
+    @property
+    def backup_dir(self) -> Path:
+        return self.data_dir / "backups"
+
+    @property
     def google_configured(self) -> bool:
         return bool(self.google_client_id and self.google_client_secret.get_secret_value())
 
