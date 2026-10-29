@@ -8,6 +8,7 @@ import logging
 import secrets
 import time
 from typing import Annotated
+from urllib.parse import urlencode
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -59,8 +60,7 @@ def _pending(request: Request) -> dict[str, tuple[str, float]]:
 
 
 def _back_to_settings(**params: str) -> RedirectResponse:
-    query = "&".join(f"{k}={v}" for k, v in params.items())
-    return RedirectResponse(f"{SETTINGS_PAGE}?{query}", status_code=303)
+    return RedirectResponse(f"{SETTINGS_PAGE}?{urlencode(params)}", status_code=303)
 
 
 @router.get("/login")
