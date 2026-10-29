@@ -239,17 +239,23 @@ a re-download.
 Pure functions over pandas DataFrames (`analytics/`). They are easy to unit-test and have
 no I/O.
 
-| Module | Output | Method (initial) |
+| Module | Output | Method (as built) |
 |---|---|---|
-| `baselines.py` | Personal norms | 30-day rolling mean/SD for RHR, HRV (ln rMSSD), SpO2, temp delta, sleep duration. 7-day short window for trend |
-| `sleep.py` | Sleep performance 0–100 | Duration vs need, efficiency, deep+REM share, consistency (bedtime SD), awakenings |
-| `recovery.py` | Recovery 0–100 | Weighted z-scores: HRV ↑, RHR ↓, sleep perf, temp delta, SpO2 dip penalty |
-| `strain.py` | Strain 0–21 + daily target | Banister TRIMP from intraday HR using HR reserve (RHR + estimated max HR), log-scaled. Target from recovery |
-| `stress.py` | Intraday stress timeline | HR elevated vs resting baseline **while `activity-level` is sedentary**, so non-exercise arousal |
-| `anomaly.py` | Illness / overreach flags | Multi-signal rule: temp delta > +0.5 °C **and** RHR > baseline + 2 SD **and/or** HRV < baseline − 1.5 SD, SpO2 drop |
-| `load.py` | Acute:chronic workload | 7-day vs 28-day strain ratio, which flags spikes |
-| `correlations.py` | "What affects you" | Journal tags vs next-day recovery/sleep (mean difference + bootstrap CI, minimum N) |
-| `features.py` | **Compact feature summary** for the LLM | See §8.2 |
+| `baselines.py` | Personal norms | 30-day mean/SD over the days *before* the scored day (min 7 days); ln scale for HRV; SD floors so stable stretches don't inflate z-scores |
+| `sleep.py` | Sleep performance 0–100 | Duration vs need 45%, efficiency 20% (75%→0, 95%→100), deep+REM share 20% (≥45%→100), bedtime consistency 15% (SD ≤15 min→100, ≥90→0); weights renormalized over available parts |
+| `recovery.py` | Recovery 0–100 | 50 ± 20 per SD: HRV 40%, resting HR 25% (inverted), sleep 25%, breathing 10% (inverted); −10 if skin temp ≥ +0.5 °C, −5 if SpO2 z ≤ −2; needs HRV or RHR |
+| `strain.py` | Strain 0–21 + target | Banister TRIMP on HR reserve, only time at HRR ≥ 0.3; `21·ln(1+TRIMP)/ln(401)`. Max HR: profile → 208−0.7·age → observed 99.5th pct (clamped 170–210) → 190. Target by recovery: ≥67 → 14–18, ≥34 → 10–14, else 6–10 |
+| `stress.py` | Stress timeline 0–100 | Minute HR above resting / 30 bpm, only for SEDENTARY, awake minutes with no activity in the previous 10 min; daily average needs ≥30 minutes |
+| `anomaly.py` | Flags + illness risk 0–1 | temp ≥ +0.5 °C, RHR z ≥ 2, HRV z ≤ −1.5, breathing z ≥ 2, SpO2 z ≤ −2; `illness_watch` = temp + a cardio/breathing signal, or any 3; 3-day HRV z ≤ −1 streak |
+| `load.py` | Acute:chronic ratio | 7-day / 28-day mean strain (needs 21 days); ≥1.5 `load_spike`, ≤0.8 `load_low` |
+| `activity.py` | Sedentary minutes/day | Raw sedentary periods split at local midnight |
+| `downsample.py` | Chart series | LTTB (keeps peaks) |
+| `correlations.py` | "What affects you" | Phase 5 |
+| `features.py` | Feature pack for the LLM | See §8.2 |
+
+`scoring.py` (ScoreService) runs these per local day, oldest first, after every sync (all
+days on the first run, then the last 4) and via `fitbit analyze`. A local day is defined by
+that day's wake-up UTC offset (`daily_metrics.tz_offset_min`), so DST and travel are handled.
 
 Scores are recomputed for affected dates after each sync (sleep revisions shift past days).
 

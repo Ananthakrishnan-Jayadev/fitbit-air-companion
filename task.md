@@ -95,23 +95,31 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done
 ---
 
 ## Phase 3: Scores and dashboard
-- [ ] `analytics/baselines.py`: 30-day / 7-day rolling stats
-- [ ] `analytics/sleep.py`: sleep performance score
-- [ ] `analytics/recovery.py`: recovery score + component breakdown
-- [ ] `analytics/strain.py`: TRIMP strain 0–21 + daily target
-- [ ] `analytics/stress.py`: sedentary-HR-elevation stress timeline
-- [ ] `analytics/anomaly.py`: illness/overreach multi-signal flags
-- [ ] `analytics/load.py`: acute:chronic workload ratio
-- [ ] `analytics/features.py`: compact feature pack (project.md §8.2)
-- [ ] Recompute affected dates after each sync; CLI `fitbit analyze [--date]`
-- [ ] API: `/api/today`, `/api/daily`, `/api/heart/intraday` (LTTB), `/api/sleep`,
-      `/api/sleep/range`, `/api/activity`, `/api/exercise`, `/api/trends`, `/api/settings`
-- [ ] **Today**: score rings, strain target, flags, component breakdowns
-- [ ] **Heart**: zoomable intraday HR, HRV/RHR trends, zones, AFib notifications
-- [ ] **Sleep**: hypnogram, stages, overnight SpO2, temp delta, consistency
-- [ ] **Activity**: steps/AZM/calories, sedentary periods, stress timeline, workouts
-- [ ] **Trends**: metric vs baseline band, 7/30/90/365 d
-- [ ] pytest: every analytics module (synthetic data + edge cases), all new endpoints
+- [x] `analytics/baselines.py`: 30-day rolling mean/SD (ln for HRV), SD floors, z-scores
+- [x] `analytics/sleep.py`: sleep performance (duration, efficiency, deep+REM, consistency)
+- [x] `analytics/recovery.py`: recovery score + component breakdown + penalties
+- [x] `analytics/strain.py`: TRIMP strain 0–21 (HRR ≥ 0.3) + daily target; max HR estimate
+- [x] `analytics/stress.py`: calm-minute HR elevation timeline + daily average
+- [x] `analytics/anomaly.py`: illness/overreach multi-signal flags + 3-day HRV streak
+- [x] `analytics/load.py`: acute:chronic workload ratio
+- [x] `analytics/activity.py`: sedentary minutes per local day (from raw periods)
+- [x] `analytics/downsample.py`: LTTB for charts
+- [x] `analytics/features.py`: compact feature pack + trend direction (used in Phase 4)
+- [x] `scoring.py` ScoreService: per-day pipeline, runs after every sync; CLI
+      `fitbit analyze [--date | --all]`; local days from wake-up UTC offset
+- [x] API: `/api/today`, `/api/daily`, `/api/trends`, `/api/heart`, `/api/sleep`,
+      `/api/sleep/range`, `/api/activity`, `/api/exercise`
+- [x] **Today**: recovery hero + meter, sleep/strain/stress tiles, flags, vs-normal table,
+      component breakdowns
+- [x] **Heart**: intraday HR (LTTB) with resting line, Google zones, 60-day RHR/HRV trends
+- [x] **Sleep**: hypnogram, stage minutes, overnight SpO2 + HRV, temp delta, last 14 nights
+- [x] **Activity**: totals, steps by hour, activity levels, stress timeline, workouts
+- [x] **Trends**: any metric vs baseline band, 30/90/180/365 d
+- [x] pytest: every analytics module, ScoreService integration, all new endpoints
+- [ ] AFib (irregular rhythm) notifications on Heart page: none in the data yet; add when
+      one exists to design against
+- [ ] **You:** run checks; `fitbit db renormalize --types sleep` then `fitbit analyze --all`
+      on the real database; review scores in the UI
 
 ---
 
