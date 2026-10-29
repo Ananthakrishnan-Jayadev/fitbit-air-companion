@@ -47,11 +47,23 @@ def test_db_upgrade(settings: Settings) -> None:
         engine.dispose()
 
 
-@pytest.mark.parametrize(("command", "phase"), [("sync", 2), ("analyze", 3), ("brief", 4)])
+@pytest.mark.parametrize(("command", "phase"), [("analyze", 3), ("brief", 4)])
 def test_future_commands_are_stubbed(command: str, phase: int) -> None:
     result = runner.invoke(cli_module.app, [command])
     assert result.exit_code == 1
     assert f"Phase {phase}" in result.output
+
+
+def test_sync_without_connection_fails_cleanly() -> None:
+    result = runner.invoke(cli_module.app, ["sync"])
+    assert result.exit_code == 1
+    assert "No Google account connected" in result.output
+
+
+def test_sync_rejects_unknown_types() -> None:
+    result = runner.invoke(cli_module.app, ["sync", "--types", "steps,nope"])
+    assert result.exit_code == 1
+    assert "nope" in result.output
 
 
 def test_serve_dev_without_npm_exits_cleanly(monkeypatch: pytest.MonkeyPatch) -> None:

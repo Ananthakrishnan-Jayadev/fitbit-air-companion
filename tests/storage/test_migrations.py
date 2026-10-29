@@ -48,7 +48,7 @@ def test_upgrade_is_idempotent(engine: Engine) -> None:
 def test_revision_tracking(engine: Engine) -> None:
     assert current_revision(engine) is None
     upgrade_to_head(engine)
-    assert current_revision(engine) == head_revision() == "0001"
+    assert current_revision(engine) == head_revision() == "0002"
 
 
 def test_downgrade_to_base_removes_tables(engine: Engine) -> None:

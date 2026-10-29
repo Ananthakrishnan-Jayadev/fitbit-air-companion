@@ -36,7 +36,7 @@ _Last updated: 2026-10-29_
 | Backend | **Python 3.12, FastAPI, Uvicorn** | Async, great for API + background jobs |
 | CLI | **Typer** (console script `fitbit`) | Provides `.venv/bin/fitbit serve` |
 | HTTP client | **httpx** (async) | Google Health API calls, OAuth token refresh |
-| OAuth | **authlib** (or google-auth-oauthlib) | Google OAuth 2.0 auth-code flow with refresh tokens |
+| OAuth | **httpx** (hand-rolled, ~100 lines) | Auth-code + PKCE with refresh tokens; no extra dependency |
 | Database | **SQLite** (WAL mode) via **SQLAlchemy 2.0** + **Alembic** | No DB server, which keeps it to one process |
 | Analytics | **pandas + numpy** (scipy if needed) | Baselines, rolling stats, scoring |
 | Scheduling | **APScheduler** (AsyncIOScheduler, in-process) | Periodic sync and nightly analysis without a second process |
@@ -131,60 +131,72 @@ analytics → AI → UI.** The app never talks to the band.
 ## 5. Google Health API integration (Option A)
 
 ### 5.1 Setup (one-time, manual)
-1. Create a Google Cloud project and enable the **Google Health API**.
-2. Configure the OAuth consent screen (External, **Testing** mode, add yourself as a test user).
-3. Create an OAuth client (type **Web application**) with redirect URI
-   `http://127.0.0.1:8000/api/auth/callback`.
-4. Put the client ID and secret in `.env`.
+Per https://developers.google.com/health/setup:
+1. Create a Google Cloud project and enable the **Google Health API** (`health.googleapis.com`).
+2. Create an OAuth client of type **Web application** with redirect URIs
+   `http://127.0.0.1:8000/api/auth/callback` and `http://localhost:8000/api/auth/callback`.
+3. Audience: External, **Testing**, add yourself as a test user (refresh tokens then expire
+   after **7 days**, so the UI offers "Reconnect").
+4. Data Access: add the four read scopes below.
+5. Put client ID/secret and a Fernet `FITBIT_SECRET_KEY` in `.env`.
+6. The Google account must have a Google Health profile (signed in to the Google Health
+   mobile app), otherwise the API answers `ACCOUNT_NOT_LINKED`.
 
-> Exact scope strings, base URL, and endpoint paths must be copied from the official docs
-> (`developers.google.com/health`) during implementation. They are deliberately **not**
-> hard-coded in this plan, to avoid guessing. Keep them in a single `ingest/scopes.py` /
-> `ingest/endpoints.py` module.
+Verified API facts (2026-10-29) live in code: base URL and paths in `ingest/endpoints.py`,
+scopes in `ingest/scopes.py`. Base URL `https://health.googleapis.com`, user `users/me`.
 
 ### 5.2 Auth flow
-- Settings page has a **Connect Google** button that hits `/api/auth/login`, which redirects to
-  Google consent → `/api/auth/callback` stores tokens.
-- Tokens live in the SQLite `oauth_tokens` table. The DB file is created with `0600`
-  permissions, and the refresh token is optionally encrypted with a key from `.env`
-  (`FITBIT_SECRET_KEY`, Fernet).
-- `GoogleHealthClient` refreshes access tokens automatically and handles `401` by
-  refreshing once, then marking the connection "needs re-auth".
+- Settings → **Connect Google** → `/api/auth/login` builds the consent URL
+  (`access_type=offline`, `prompt=consent`, PKCE S256, random `state` kept in memory for 10 min).
+- `/api/auth/callback` exchanges the code, calls `GET /v4/users/me/identity` to confirm the
+  account is linked, stores tokens, then starts the initial sync in the background.
+- Tokens live in `oauth_tokens` (single row). The refresh token is Fernet-encrypted with
+  `FITBIT_SECRET_KEY`. Access tokens are refreshed on demand 2 min before expiry.
+- A `401` triggers one forced refresh; a rejected refresh (`invalid_grant`) sets
+  `needs_reauth` and every later call fails fast until the user reconnects.
+- Scopes (read-only): `googlehealth.activity_and_fitness.readonly`,
+  `googlehealth.health_metrics_and_measurements.readonly`, `googlehealth.sleep.readonly`,
+  `googlehealth.irn.readonly`. Consent is per-scope; missing scopes are shown in Settings.
 
 ### 5.3 Data types to sync (Air-relevant)
+Source: https://developers.google.com/health/data-types. Table-driven in `ingest/registry.py`.
 
-| Group | Data types | Granularity |
+| Kind | Data types | Read with |
 |---|---|---|
-| Heart | `heart-rate`, `heart-rate-variability`, `daily-resting-heart-rate`, `daily-heart-rate-variability`, `irregular-rhythm-notification` | intraday + daily |
-| Oxygen | `oxygen-saturation`, `daily-oxygen-saturation` | minute-level (sleep) + daily |
-| Temperature | `daily-sleep-temperature-derivations`, `skin-temperature-sensors` (**v4beta**, behind a config flag) | nightly |
-| Sleep | `sleep` (sessions + stages) | session |
-| Activity | `steps`, `distance`, `activity-level`, `active-energy-burned`, `basal-energy-burned`, `total-calories`, `active-zone-minutes`, `calories-in-heart-rate-zone`, `sedentary-period` | intraday / interval |
-| Workouts | `exercise`, `vo2-max`, `run-vo2-max` | session |
-| Manual logs | `weight`, `body-fat`, `height`, `nutrition-log`, `moods`, `menstrual-period`, `symptoms` | event |
+| Sample | `heart-rate` (1 s resolution), `heart-rate-variability`, `oxygen-saturation`, `respiratory-rate-sleep-summary`, `vo2-max`, `run-vo2-max`, `weight`, `body-fat` | `reconcile` |
+| Interval | `steps`, `distance`, `active-energy-burned`, `activity-level`, `active-zone-minutes`, `sedentary-period`, `active-minutes`, `time-in-heart-rate-zone` | `reconcile` |
+| Session | `sleep`, `exercise` (`reconcile`); `irregular-rhythm-notification` (`list` only) | see left |
+| Daily | `daily-resting-heart-rate`, `daily-heart-rate-variability`, `daily-oxygen-saturation`, `daily-respiratory-rate`, `daily-sleep-temperature-derivations`, `daily-vo2-max`, `daily-heart-rate-zones` | `reconcile` |
+| Daily rollup | `steps`, `distance`, `total-calories`, `active-energy-burned`, `active-zone-minutes` | `dailyRollUp` (≤14-day ranges) |
+| Beta (opt-in) | `skin-temperature-sensors` (v4beta, `ENABLE_BETA_TYPES=true`) | `reconcile` |
 
-Skipped for the Air (no hardware for them): `floors`, `altitude`, `electrocardiogram`,
-`swim-lengths-data`. The design is table-driven, so enabling them later is one line in
-`ingest/registry.py`.
+Corrections vs. the original plan: `basal-energy-burned` does not exist; `total-calories` and
+`calories-in-heart-rate-zone` are rollup-only; `moods`, `menstrual-period`, `symptoms` are
+**write-only** (cannot be read). Breathing rate *is* available (`daily-respiratory-rate`).
+
+Skipped for the Air: `floors`, `altitude`, `electrocardiogram`, `swim-lengths-data`,
+nutrition types. Enabling one is a single registry entry.
 
 **Not available from the API, so we compute our own:** Readiness, Sleep Score, Cardio Load,
 stress. BMI and BMR also need to be derived client-side.
 
 ### 5.4 Sync strategy
 - **Polling, not webhooks.** Webhooks need a public HTTPS URL, which a localhost app doesn't
-  have. Webhooks could be added later behind a tunnel (Tailscale Funnel / cloudflared),
-  but that is out of scope.
-- `sync_state` table stores a per-data-type cursor (last synced end time).
-- Jobs:
-  - every **15 min**: incremental sync of intraday types (cursor → now, with a 2 h overlap
-    to catch late-arriving phone syncs).
-  - every **hour**: sessions + daily types for the last 3 days (sleep/HRV get revised).
-  - **first run / `fitbit sync --since`**: backfill in day-sized chunks, newest first.
-- Idempotent upserts keyed on `(data_type, start_time, end_time, source_id)`.
-- Respect rate limits: token bucket in the client, exponential backoff on `429`/`5xx`.
-- Use the `dataSourceFamily` filter to keep only device-sourced data where it matters.
-- All timestamps are stored in **UTC**, along with the user's timezone offset at the time
-  (needed for "day" boundaries and sleep that crosses midnight).
+  have. Could be added later behind a tunnel; out of scope.
+- **Sources** (`dataSourceFamily`): sensor data from `google-wearables` (trackers only);
+  manual logs (`weight`, `body-fat`) from `google-sources`.
+- `sync_state` tracks the synced range `[synced_from, cursor)` per type. Each run does an
+  incremental window `[cursor − overlap, now)` (overlap 2 h for samples/intervals, 3 days for
+  sessions/daily, which Google revises), then continues any unfinished backfill down to
+  `BACKFILL_DAYS` (default **90**) or `fitbit sync --since`. Windows go newest first and state is
+  saved after each one, so interrupted runs resume.
+- Jobs: intraday kinds every `SYNC_INTERVAL_MIN` (15), sessions/daily/rollups hourly; first
+  runs 10 s / 60 s after startup. One sync at a time (shared lock).
+- Rate limits: 300 req/min per user; Testing-mode apps 2.5 QPS → client spaces requests at
+  `SYNC_REQUESTS_PER_S` (2.0), retries 429/5xx with backoff honouring `Retry-After`.
+- One failing data type is recorded in `sync_state.last_error` and does not stop the others.
+- Timestamps are stored in **UTC**. Each API point carries its own UTC offset, which is used
+  for local-day assignment (e.g. a night belongs to the local date you wake up on).
 
 ---
 
@@ -195,13 +207,14 @@ stress. BMI and BMR also need to be derived client-side.
 | Table | Purpose |
 |---|---|
 | `oauth_tokens` | Google tokens (single row) |
-| `sync_state` | Per-type cursor, last success/error |
-| `data_points` | **Raw landing table**: `data_type, start_ts, end_ts, value_json, source_id, ingested_at`. Keeps everything losslessly |
-| `hr_samples` | `ts, bpm`, a typed hot path for intraday HR (indexed by ts) |
+| `sync_state` | Per-type synced range `[synced_from, cursor)`, last success/error |
+| `data_points` | **Raw landing table**: `data_type, start_ts, end_ts, value_json, source_id, ingested_at`. Keeps every type losslessly except heart rate |
+| `hr_samples` | `ts, bpm, motion_context`. Heart rate is stored **only** here (no raw JSON): at 1 s resolution raw JSON would be ~10 GB/year |
 | `hrv_samples`, `spo2_samples`, `activity_minutes` | Typed intraday series |
 | `sleep_sessions`, `sleep_stages` | Session + stage segments |
 | `exercise_sessions` | Workouts with HR zone breakdown |
-| `daily_metrics` | One row per date: RHR, HRV, SpO2, temp delta, steps, AZM, calories… |
+| `daily_metrics` | One row per date: RHR, HRV, SpO2, temp delta, respiratory rate, steps, AZM, calories… |
+| `user_profile` | Age, max HR, sleep need (single row) |
 | `baselines` | Rolling personal baselines per metric (mean, sd, window) |
 | `scores` | One row per date: recovery, strain, sleep_perf, stress, illness_risk + component breakdown JSON |
 | `journal_entries` | User tags per day (caffeine, alcohol, late meal, sick, travel, free text) |
@@ -293,7 +306,8 @@ This keeps prompts fast and grounded, and it reduces hallucinated numbers.
 
 ```
 GET  /api/health                         app + db + ollama + google status
-GET  /api/auth/login | /api/auth/callback | POST /api/auth/logout
+GET  /api/auth/login | /api/auth/callback | /api/auth/status | POST /api/auth/logout
+GET/PUT /api/profile                     age, max HR, sleep need
 POST /api/sync            {types?, since?}   trigger sync (runs as background task)
 GET  /api/sync/status
 GET  /api/today                          scores + key metrics + latest brief
@@ -309,7 +323,7 @@ GET  /api/ai/insights?date&kind
 POST /api/ai/brief/regenerate {date}
 POST /api/ai/chat  (text/event-stream)
 GET  /api/ai/status
-GET/PUT /api/settings                    sync interval, max HR, sleep need, AI on/off
+GET/PUT /api/settings                    app preferences (e.g. AI on/off)
 ```
 
 ---

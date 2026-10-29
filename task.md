@@ -20,7 +20,7 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done
 ## Phase 1: Foundation
 ### Tooling
 - [x] `pyproject.toml`: package `fitbit_app` (src layout), Python ≥3.12, deps (fastapi,
-      uvicorn[standard], typer, httpx, authlib, sqlalchemy, alembic, pydantic-settings,
+      uvicorn[standard], typer, httpx, sqlalchemy, alembic, pydantic-settings,
       apscheduler, pandas, numpy, ollama, jinja2, cryptography), dev extras (pytest,
       pytest-asyncio, respx, ruff)
 - [x] `[project.scripts] fitbit = "fitbit_app.cli:app"`
@@ -61,30 +61,31 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done
 ---
 
 ## Phase 2: Data in (Google Health API)
-- [ ] Manual: Google Cloud project, enable Google Health API, OAuth consent (Testing, self as
-      test user), Web OAuth client, redirect `http://127.0.0.1:8000/api/auth/callback`
-- [ ] Copy exact base URL, endpoint paths, scope strings from official docs →
+- [ ] **Manual (you):** Google Cloud project, enable Google Health API, Web OAuth client with
+      redirects `http://127.0.0.1:8000/api/auth/callback` + `http://localhost:8000/...`,
+      Audience = Testing + self as test user, add the 4 read scopes, fill `.env`
+- [x] Copy exact base URL, endpoint paths, scope strings from official docs →
       `ingest/endpoints.py`, `ingest/scopes.py`
-- [ ] `ingest/oauth.py` + `api/auth.py`: login → callback → store tokens (Fernet-encrypted
-      refresh token), logout, re-auth state
-- [ ] `ingest/client.py`: `GoogleHealthClient` with auto refresh, pagination, token-bucket
-      rate limit, backoff on 429/5xx, `dataSourceFamily` filter
-- [ ] `ingest/registry.py`: Air-relevant types (project.md §5.3) with granularity, v4/v4beta,
-      enabled flag
-- [ ] `ingest/sync.py`: `SyncEngine` with per-type cursors, 2 h overlap, newest-first
-      chunked backfill, errors stored in `sync_state`
-- [ ] Raw responses → `data_points`
-- [ ] `storage/normalize.py`: raw → `hr_samples`, `hrv_samples`, `spo2_samples`,
+- [x] `ingest/oauth.py` + `api/auth.py`: login (PKCE) → callback (identity check) → store
+      tokens (Fernet-encrypted refresh token), logout, re-auth state
+- [x] `ingest/client.py`: `GoogleHealthClient` with auto refresh, pagination, rate limit,
+      backoff on 429/5xx, `dataSourceFamily` filter
+- [x] `ingest/registry.py`: Air-relevant types (project.md §5.3), v4/v4beta, beta flag
+- [x] `ingest/sync.py`: `SyncEngine` with per-type synced range, overlap, newest-first
+      resumable backfill (90 days), errors stored in `sync_state`
+- [x] Raw responses → `data_points` (all types except heart rate)
+- [x] `storage/normalize.py`: → `hr_samples`, `hrv_samples`, `spo2_samples`,
       `activity_minutes`, `sleep_sessions`/`sleep_stages`, `exercise_sessions`, `daily_metrics`
-- [ ] Timezone handling: UTC storage + local-day assignment (sleep crossing midnight)
-- [ ] `scheduler.py`: APScheduler in lifespan, intraday sync /15 min, daily+session sync
-      /hour, `max_instances=1`, coalesce
-- [ ] CLI `fitbit sync [--since] [--types]`; `doctor` checks the Google token
-- [ ] `api/sync.py`: trigger + status
-- [ ] **Settings page:** Connect Google, per-type sync status, backfill, profile (age, max HR,
-      sleep need), Google status banner
-- [ ] pytest: client (respx), OAuth refresh/re-auth, sync cursors/backfill/idempotency,
-      normalization incl. midnight-crossing sleep
+- [x] Timezone handling: UTC storage + local day from each point's UTC offset
+- [x] `scheduler.py`: APScheduler in lifespan, intraday /15 min, daily+session /hour
+- [x] CLI `fitbit sync [--since] [--types]`; `doctor` checks the Google connection
+- [x] `api/sync.py`: trigger + status; `api/profile.py`
+- [x] **Settings page:** Connect Google, per-type sync status, backfill, profile
+- [x] pytest: client (respx), OAuth refresh/re-auth, sync cursors/backfill/idempotency,
+      normalization incl. midnight-crossing sleep, auth/sync/profile API
+- [ ] **After the first real sync:** resolve every `TODO(verify)` (filter prefixes for
+      multi-word types, exercise `metricsSummary`, rollup value fields, `activityLevelType`
+      values) by inspecting `data_points.value_json`, then normalize those fields
 
 ---
 

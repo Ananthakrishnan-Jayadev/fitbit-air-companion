@@ -1,3 +1,4 @@
+import datetime as dt
 import os
 from collections.abc import Awaitable, Callable
 from pathlib import Path
@@ -9,7 +10,8 @@ from fitbit_app import doctor as doctor_module
 from fitbit_app.ai.status import OllamaStatus
 from fitbit_app.config import Settings
 from fitbit_app.doctor import CheckResult, Level, run_checks
-from fitbit_app.storage.db import create_db_engine
+from fitbit_app.ingest.oauth import TokenSet, TokenStore
+from fitbit_app.storage.db import create_db_engine, create_session_factory
 from fitbit_app.storage.migrate import upgrade_to_head
 
 
@@ -31,6 +33,7 @@ async def test_fresh_setup_only_warns(settings: Settings) -> None:
     assert results[".env"].level is Level.WARN
     assert results["Google OAuth"].level is Level.WARN
     assert results["Database"].level is Level.WARN
+    assert results["Google connection"].level is Level.WARN
     assert results["Frontend build"].level is Level.WARN
     assert results["Ollama"].level is Level.WARN  # AI disabled in the fixture
 
@@ -42,6 +45,9 @@ async def test_fully_configured_is_ok(
     (settings.static_dir / "index.html").write_text("<html></html>")
     engine = create_db_engine(settings.db_path)
     upgrade_to_head(engine)
+    TokenStore(create_session_factory(engine), settings.fitbit_secret_key).save(
+        TokenSet("a", "r", dt.datetime(2030, 1, 1, tzinfo=dt.UTC), "", "Bearer")
+    )
     engine.dispose()
     monkeypatch.setattr(doctor_module, "check_ollama", _fake_ollama(True, True))
     configured = settings.model_copy(
