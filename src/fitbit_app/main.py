@@ -12,7 +12,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse, Response
 
 from fitbit_app import __version__
-from fitbit_app.api import auth, health, profile, sync
+from fitbit_app.api import auth, dashboard, details, health, profile, sync
 from fitbit_app.config import Settings, get_settings
 from fitbit_app.ingest.service import SyncService
 from fitbit_app.scheduler import create_scheduler
@@ -68,7 +68,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(title="Fitbit Air Companion", version=__version__, lifespan=lifespan)
     app.state.settings = settings
-    for module in (health, auth, sync, profile):
+    for module in (health, auth, sync, profile, dashboard, details):
         app.include_router(module.router, prefix="/api")
     _mount_frontend(app, settings.static_dir)
     return app

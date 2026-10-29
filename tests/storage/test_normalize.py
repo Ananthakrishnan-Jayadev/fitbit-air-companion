@@ -112,6 +112,20 @@ def test_sleep_session_and_stages(session: Session) -> None:
     assert stages == ["light", "deep", "rem"]
 
 
+def test_main_sleep_records_wake_up_offset(session: Session) -> None:
+    start, end = "2026-10-01T03:00:00Z", "2026-10-01T10:30:00Z"
+    _store(session, "sleep", [g.sleep(start, end, [(start, end, "LIGHT")])])
+    row = session.get(DailyMetric, dt.date(2026, 10, 1))
+    assert row is not None
+    assert row.tz_offset_min == -240
+
+
+def test_nap_does_not_set_offset(session: Session) -> None:
+    point = g.sleep("2026-10-01T18:00:00Z", "2026-10-01T19:00:00Z", [], name="nap", main=False)
+    _store(session, "sleep", [point])
+    assert session.get(DailyMetric, dt.date(2026, 10, 1)) is None
+
+
 def test_sleep_local_date_uses_offset_not_utc(session: Session) -> None:
     # Ends 22:00 EDT Oct 1 = 02:00 UTC Oct 2: still Oct 1 locally.
     point = g.sleep("2026-10-01T23:00:00Z", "2026-10-02T02:00:00Z", [], name="nap-1", main=False)
