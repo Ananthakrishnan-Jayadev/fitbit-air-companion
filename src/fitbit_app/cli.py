@@ -20,6 +20,7 @@ from fitbit_app.ingest.service import SyncService
 from fitbit_app.ingest.sync import SyncReport
 from fitbit_app.logging_setup import configure_logging
 from fitbit_app.main import create_app
+from fitbit_app.scoring import ScoreService
 from fitbit_app.storage.db import create_db_engine, create_session_factory
 from fitbit_app.storage.migrate import upgrade_to_head
 from fitbit_app.storage.normalize import renormalize
@@ -183,16 +184,42 @@ async def _run_sync(
     engine = create_db_engine(settings.db_path)
     try:
         await asyncio.to_thread(upgrade_to_head, engine)
-        service = SyncService(settings, create_session_factory(engine))
+        session_factory = create_session_factory(engine)
+        scores = ScoreService(session_factory)
+
+        async def rescore(_: object) -> None:
+            await asyncio.to_thread(scores.recompute_after_sync)
+
+        service = SyncService(settings, session_factory, after_sync=rescore)
         return await service.run(keys=keys, since=since)
     finally:
         engine.dispose()
 
 
 @app.command()
-def analyze() -> None:
-    """Recompute scores (Phase 3)."""
-    _not_yet(3)
+def analyze(
+    day: Annotated[
+        dt.datetime | None,
+        typer.Option("--date", formats=["%Y-%m-%d"], help="Score only this day (YYYY-MM-DD)"),
+    ] = None,
+    all_days: Annotated[bool, typer.Option("--all", help="Rescore every day with data")] = False,
+) -> None:
+    """Recompute scores, baselines and derived daily values from stored data."""
+    settings = get_settings()
+    configure_logging(settings.log_level)
+    engine = create_db_engine(settings.db_path)
+    try:
+        upgrade_to_head(engine)
+        service = ScoreService(create_session_factory(engine))
+        if day is not None:
+            count = service.recompute([day.date()])
+        elif all_days:
+            count = service.recompute_all()
+        else:
+            count = service.recompute_after_sync()
+    finally:
+        engine.dispose()
+    typer.secho(f"Scored {count} days.", fg=typer.colors.GREEN)
 
 
 @app.command()

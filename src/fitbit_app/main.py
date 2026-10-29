@@ -16,6 +16,7 @@ from fitbit_app.api import auth, health, profile, sync
 from fitbit_app.config import Settings, get_settings
 from fitbit_app.ingest.service import SyncService
 from fitbit_app.scheduler import create_scheduler
+from fitbit_app.scoring import ScoreService
 from fitbit_app.storage.db import create_db_engine, create_session_factory
 from fitbit_app.storage.migrate import upgrade_to_head
 
@@ -39,9 +40,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         engine = create_db_engine(settings.db_path)
         await asyncio.to_thread(upgrade_to_head, engine)
         session_factory = create_session_factory(engine)
-        sync_service = SyncService(settings, session_factory)
+        score_service = ScoreService(session_factory)
+
+        async def rescore(_: object) -> None:
+            await asyncio.to_thread(score_service.recompute_after_sync)
+
+        sync_service = SyncService(settings, session_factory, after_sync=rescore)
         app.state.engine = engine
         app.state.session_factory = session_factory
+        app.state.score_service = score_service
         app.state.sync_service = sync_service
         app.state.oauth_pending = {}
         logger.info("Database ready at %s", settings.db_path)

@@ -6,7 +6,7 @@ import asyncio
 import contextlib
 import datetime as dt
 import logging
-from collections.abc import Iterable
+from collections.abc import Awaitable, Callable, Iterable
 
 import httpx
 from sqlalchemy.orm import Session, sessionmaker
@@ -23,11 +23,19 @@ logger = logging.getLogger(__name__)
 
 HTTP_TIMEOUT = httpx.Timeout(30.0)
 
+AfterSync = Callable[[SyncReport], Awaitable[object]]
+
 
 class SyncService:
-    def __init__(self, settings: Settings, session_factory: sessionmaker[Session]) -> None:
+    def __init__(
+        self,
+        settings: Settings,
+        session_factory: sessionmaker[Session],
+        after_sync: AfterSync | None = None,
+    ) -> None:
         self._settings = settings
         self._session_factory = session_factory
+        self._after_sync = after_sync
         self._lock = asyncio.Lock()
         self._task: asyncio.Task[SyncReport | None] | None = None
         self.last_report: SyncReport | None = None
@@ -68,6 +76,12 @@ class SyncService:
                     raise
             self.last_report = report
             self.last_error = None
+            if self._after_sync is not None and report.ok:
+                try:
+                    await self._after_sync(report)
+                except Exception:
+                    # Scoring problems must never break syncing.
+                    logger.exception("Post-sync processing failed")
             return report
 
     async def run_scheduled(self, kinds: Iterable[RecordKind]) -> None:

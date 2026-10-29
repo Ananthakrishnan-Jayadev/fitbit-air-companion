@@ -47,11 +47,19 @@ def test_db_upgrade(settings: Settings) -> None:
         engine.dispose()
 
 
-@pytest.mark.parametrize(("command", "phase"), [("analyze", 3), ("brief", 4)])
-def test_future_commands_are_stubbed(command: str, phase: int) -> None:
-    result = runner.invoke(cli_module.app, [command])
+def test_brief_is_stubbed_until_phase_4() -> None:
+    result = runner.invoke(cli_module.app, ["brief"])
     assert result.exit_code == 1
-    assert f"Phase {phase}" in result.output
+    assert "Phase 4" in result.output
+
+
+@pytest.mark.parametrize(
+    "args", [["analyze"], ["analyze", "--all"], ["analyze", "--date", "2026-10-01"]]
+)
+def test_analyze_on_empty_database(args: list[str]) -> None:
+    result = runner.invoke(cli_module.app, args)
+    assert result.exit_code == 0
+    assert "Scored 0 days" in result.output
 
 
 def test_db_renormalize(settings: Settings) -> None:

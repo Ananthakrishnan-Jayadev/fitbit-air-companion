@@ -245,6 +245,9 @@ def _sleep(session: Session, spec: DataTypeSpec, points: list[Point]) -> None:
         asleep = _optional_float(summary.get("minutesAsleep"))
         metadata = body.get("metadata", {})
         key = source_id(p) or f"sleep:{interval['startTime']}"
+        # The night belongs to the local day you wake up on.
+        local_date = _local_date(end, interval.get("endUtcOffset"))
+        is_main = bool(metadata.get("mainSleep", not metadata.get("nap", False)))
 
         upsert(
             session,
@@ -254,15 +257,23 @@ def _sleep(session: Session, spec: DataTypeSpec, points: list[Point]) -> None:
                     "source_key": key,
                     "start_ts": start,
                     "end_ts": end,
-                    # The night belongs to the local day you wake up on.
-                    "local_date": _local_date(end, interval.get("endUtcOffset")),
+                    "local_date": local_date,
                     "duration_min": in_period or (end - start).total_seconds() / 60,
                     "efficiency": 100 * asleep / in_period if asleep and in_period else None,
-                    "is_main": bool(metadata.get("mainSleep", not metadata.get("nap", False))),
+                    "is_main": is_main,
                 }
             ],
             index_elements=["source_key"],
         )
+        if is_main:
+            # Wake-up offset defines that day's local midnight for scoring (DST, travel).
+            offset_min = round(parse_offset(interval.get("endUtcOffset")).total_seconds() / 60)
+            upsert(
+                session,
+                DailyMetric,
+                [{"date": local_date, "tz_offset_min": offset_min, "updated_at": utcnow()}],
+                index_elements=["date"],
+            )
         session_id = session.scalar(select(SleepSession.id).where(SleepSession.source_key == key))
         # Stages get revised as Google reprocesses sleep: replace, don't merge.
         session.execute(delete(SleepStage).where(SleepStage.session_id == session_id))
