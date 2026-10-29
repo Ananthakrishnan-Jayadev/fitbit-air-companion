@@ -49,6 +49,10 @@ export function apiPut<T>(path: string, body: unknown): Promise<T> {
   return request<T>("PUT", path, body);
 }
 
+export function apiDelete(path: string): Promise<void> {
+  return request<void>("DELETE", path);
+}
+
 /** POST JSON and return the raw streaming response (for server-sent events). */
 export async function apiPostStream(path: string, body: unknown, signal?: AbortSignal): Promise<Response> {
   const response = await fetch(`/api${path}`, {

@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
+import { useAuthStatus } from "../hooks/useAuthStatus.ts";
 import { useHealth } from "../hooks/useHealth.ts";
 
 function Banner({ tone, children }: { tone: "error" | "warn"; children: ReactNode }) {
@@ -11,6 +13,7 @@ function Banner({ tone, children }: { tone: "error" | "warn"; children: ReactNod
 
 export default function StatusBanner() {
   const { data, isError } = useHealth();
+  const auth = useAuthStatus().data;
 
   if (isError) {
     return <Banner tone="error">Cannot reach the app server. Is `fitbit serve` running?</Banner>;
@@ -30,6 +33,14 @@ export default function StatusBanner() {
 
   return (
     <>
+      {auth?.needs_reauth && (
+        <Banner tone="warn">
+          Your Google connection expired, so new data isn't syncing.{" "}
+          <Link to="/settings" className="underline">
+            Reconnect in Settings
+          </Link>
+        </Banner>
+      )}
       {messages.map((m) => (
         <Banner key={m.text} tone={m.tone}>
           {m.text}

@@ -1,23 +1,21 @@
-import type { ComponentType } from "react";
+import { lazy, Suspense, type ComponentType } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout.tsx";
+import { Loading } from "./components/PageState.tsx";
 import PlaceholderPage from "./components/PlaceholderPage.tsx";
 import { NAV_ITEMS } from "./navigation.ts";
-import ActivityPage from "./pages/ActivityPage.tsx";
-import CoachPage from "./pages/CoachPage.tsx";
-import HeartPage from "./pages/HeartPage.tsx";
 import SettingsPage from "./pages/SettingsPage.tsx";
-import SleepPage from "./pages/SleepPage.tsx";
 import TodayPage from "./pages/TodayPage.tsx";
-import TrendsPage from "./pages/TrendsPage.tsx";
 
+// Chart-heavy pages load on first visit, keeping the initial bundle small.
 const PAGES: Record<string, ComponentType> = {
   "/": TodayPage,
-  "/heart": HeartPage,
-  "/sleep": SleepPage,
-  "/activity": ActivityPage,
-  "/trends": TrendsPage,
-  "/coach": CoachPage,
+  "/heart": lazy(() => import("./pages/HeartPage.tsx")),
+  "/sleep": lazy(() => import("./pages/SleepPage.tsx")),
+  "/activity": lazy(() => import("./pages/ActivityPage.tsx")),
+  "/trends": lazy(() => import("./pages/TrendsPage.tsx")),
+  "/journal": lazy(() => import("./pages/JournalPage.tsx")),
+  "/coach": lazy(() => import("./pages/CoachPage.tsx")),
   "/settings": SettingsPage,
 };
 
@@ -31,7 +29,15 @@ export default function App() {
             <Route
               key={item.path}
               path={item.path}
-              element={Page ? <Page /> : <PlaceholderPage item={item} />}
+              element={
+                Page ? (
+                  <Suspense fallback={<Loading />}>
+                    <Page />
+                  </Suspense>
+                ) : (
+                  <PlaceholderPage item={item} />
+                )
+              }
             />
           );
         })}

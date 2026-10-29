@@ -235,3 +235,39 @@ export interface ChatMessage {
   content: string;
   created_at?: string;
 }
+
+// --- Phase 5: journal, correlations ----------------------------------------------------
+
+export interface JournalEntry {
+  date: string;
+  tags: string[];
+  note: string | null;
+}
+
+export interface TagInfo {
+  tag: string;
+  count: number;
+  preset: boolean;
+}
+
+export type Outcome = "recovery" | "sleep_perf" | "hrv_rmssd_ms" | "resting_hr" | "sleep_min";
+
+export interface TagEffect {
+  tag: string;
+  n_with: number;
+  n_without: number;
+  mean_with: number;
+  mean_without: number;
+  difference: number;
+  ci_low: number;
+  ci_high: number;
+  confident: boolean;
+}
+
+export interface CorrelationsResponse {
+  outcome: Outcome;
+  start: string;
+  end: string;
+  logged_days: number;
+  effects: TagEffect[];
+}

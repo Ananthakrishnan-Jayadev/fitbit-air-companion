@@ -1,4 +1,5 @@
 import { useSearchParams } from "react-router-dom";
+import DataCard from "../components/settings/DataCard.tsx";
 import GoogleConnectionCard from "../components/settings/GoogleConnectionCard.tsx";
 import ProfileCard from "../components/settings/ProfileCard.tsx";
 import SyncCard from "../components/settings/SyncCard.tsx";
@@ -46,6 +47,7 @@ export default function SettingsPage() {
         <GoogleConnectionCard />
         <SyncCard />
         <ProfileCard />
+        <DataCard />
         <SystemStatusCard />
       </div>
     </section>
