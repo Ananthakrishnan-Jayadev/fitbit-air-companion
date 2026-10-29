@@ -54,6 +54,17 @@ def test_future_commands_are_stubbed(command: str, phase: int) -> None:
     assert f"Phase {phase}" in result.output
 
 
+def test_db_renormalize(settings: Settings) -> None:
+    result = runner.invoke(cli_module.app, ["db", "renormalize", "--types", "steps:daily"])
+    assert result.exit_code == 0
+    assert "rebuilt" in result.output
+
+
+def test_db_renormalize_rejects_unknown_types() -> None:
+    result = runner.invoke(cli_module.app, ["db", "renormalize", "--types", "nope"])
+    assert result.exit_code == 1
+
+
 def test_sync_without_connection_fails_cleanly() -> None:
     result = runner.invoke(cli_module.app, ["sync"])
     assert result.exit_code == 1

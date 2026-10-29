@@ -199,6 +199,10 @@ stress. BMI and BMR also need to be derived client-side.
   rejects camelCase for multi-word types. Reconciled points carry no `dataPointName` and no
   heart-rate `motionContext`, so sessions are keyed by start time and `hr_samples.motion_context`
   stays empty (activity context comes from `activity-level` instead).
+- Enum labels seen live: activity level `SEDENTARY` / `LIGHTLY_ACTIVE` / `MODERATELY_ACTIVE` /
+  `VERY_ACTIVE`; sleep stages `LIGHT` / `DEEP` / `REM` / `AWAKE` (+ `ASLEEP` for classic logs);
+  HR zones `LIGHT` / `MODERATE` / `VIGOROUS` / `PEAK`.
+- `fitbit db renormalize` re-applies the typed mapping to stored raw JSON after a mapping change.
 - Timestamps are stored in **UTC**. Each API point carries its own UTC offset, which is used
   for local-day assignment (e.g. a night belongs to the local date you wake up on).
 

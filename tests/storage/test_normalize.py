@@ -17,7 +17,7 @@ from fitbit_app.storage.models import (
     SleepStage,
     Spo2Sample,
 )
-from fitbit_app.storage.normalize import store_points
+from fitbit_app.storage.normalize import renormalize, store_points
 from fixtures import google_api as g
 
 UTC = dt.UTC
@@ -133,12 +133,44 @@ def test_resynced_sleep_replaces_stages(session: Session) -> None:
 
 
 def test_exercise(session: Session) -> None:
-    point = g.exercise("2026-10-01T22:00:00Z", "2026-10-01T22:50:00Z", "RUNNING", "2700s")
+    metrics = {
+        "caloriesKcal": 410,
+        "distanceMillimeters": 5200000,
+        "averageHeartRateBeatsPerMinute": "148",
+        "activeZoneMinutes": "38",
+        "heartRateZoneDurations": {
+            "lightTime": "300s",
+            "moderateTime": "1200s",
+            "vigorousTime": "900s",
+            "peakTime": "60s",
+        },
+    }
+    point = g.exercise("2026-10-01T22:00:00Z", "2026-10-01T22:50:00Z", "RUNNING", "2700s", metrics)
     _store(session, "exercise", [point])
     row = session.scalars(select(ExerciseSession)).one()
     assert row.activity_type == "RUNNING"
     assert row.duration_min == 45
     assert row.local_date == dt.date(2026, 10, 1)
+    assert row.calories == 410
+    assert row.distance_m == 5200
+    assert row.avg_hr == 148
+    assert row.max_hr is None
+    assert row.zones_json == {
+        "light_min": 5,
+        "moderate_min": 20,
+        "vigorous_min": 15,
+        "peak_min": 1,
+        "active_zone_minutes": 38,
+    }
+
+
+def test_exercise_without_metrics(session: Session) -> None:
+    point = g.exercise("2026-10-01T22:00:00Z", "2026-10-01T22:30:00Z", "WALKING")
+    _store(session, "exercise", [point])
+    row = session.scalars(select(ExerciseSession)).one()
+    assert row.duration_min == 30
+    assert row.calories is None
+    assert row.zones_json is None
 
 
 def test_daily_types_merge_into_daily_metrics(session: Session) -> None:
@@ -188,6 +220,47 @@ def test_steps_rollup(session: Session) -> None:
     assert row is not None
     assert row.steps == 9876
     assert session.scalar(select(DataPoint.data_type)) == "steps:daily"
+
+
+def test_daily_rollup_totals(session: Session) -> None:
+    day = dt.date(2026, 10, 1)
+    _store(session, "distance:daily", [g.rollup(day, "distance", millimetersSum="7350000")])
+    _store(session, "total-calories:daily", [g.rollup(day, "totalCalories", kcalSum=2310.5)])
+    _store(
+        session, "active-energy-burned:daily", [g.rollup(day, "activeEnergyBurned", kcalSum=640.0)]
+    )
+    azm = g.rollup(
+        day,
+        "activeZoneMinutes",
+        sumInFatBurnHeartZone="20",
+        sumInCardioHeartZone="12",
+        sumInPeakHeartZone="4",
+    )
+    _store(session, "active-zone-minutes:daily", [azm])
+    row = session.get(DailyMetric, day)
+    assert row is not None
+    assert row.distance_m == 7350
+    assert row.total_calories == 2310.5
+    assert row.active_calories == 640.0
+    assert row.active_zone_minutes == 36
+
+
+def test_renormalize_rebuilds_typed_rows_from_raw(session: Session) -> None:
+    day = dt.date(2026, 10, 1)
+    _store(session, "total-calories:daily", [g.rollup(day, "totalCalories", kcalSum=2000.0)])
+    session.query(DailyMetric).delete()
+    session.commit()
+
+    assert renormalize(session, _spec("total-calories:daily")) == 1
+    session.commit()
+    row = session.get(DailyMetric, day)
+    assert row is not None
+    assert row.total_calories == 2000.0
+
+
+def test_renormalize_skips_types_without_raw(session: Session) -> None:
+    _store(session, "heart-rate", [g.heart_rate("2026-10-01T12:00:00Z", 60)])
+    assert renormalize(session, _spec("heart-rate")) == 0
 
 
 def test_points_without_body_are_skipped(session: Session) -> None:

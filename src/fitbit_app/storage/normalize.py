@@ -1,9 +1,9 @@
 """Store one page of API data points: raw JSON (data_points) + typed tables.
 
-Field names follow the DataPoint reference:
-https://developers.google.com/health/reference/rest/v4/users.dataTypes.dataPoints
-Fields marked TODO(verify) are not documented precisely enough yet; they are kept in the
-raw JSON and can be normalized later without re-downloading.
+Field names follow the DataPoint reference
+(https://developers.google.com/health/reference/rest/v4/users.dataTypes.dataPoints), and were
+checked against live responses on 2026-10-29. Raw JSON is kept, so `renormalize` can rebuild
+the typed tables after a mapping change without re-downloading.
 """
 
 from __future__ import annotations
@@ -84,6 +84,32 @@ def store_points(session: Session, spec: DataTypeSpec, points: list[Point]) -> S
     if handler is not None:
         handler(session, spec, usable)
     return StoreResult(len(usable), min(start for start, _ in bounds))
+
+
+RENORMALIZE_BATCH = 2000
+
+
+def renormalize(session: Session, spec: DataTypeSpec) -> int:
+    """Re-run the typed mapping for `spec` over its stored raw JSON. Caller commits."""
+    handler = _HANDLERS.get(spec.key)
+    if handler is None or not spec.store_raw:
+        return 0
+    total = 0
+    last_id = 0
+    while True:
+        rows = session.execute(
+            select(DataPoint.id, DataPoint.value_json)
+            .where(DataPoint.data_type == spec.key, DataPoint.id > last_id)
+            .order_by(DataPoint.id)
+            .limit(RENORMALIZE_BATCH)
+        ).all()
+        if not rows:
+            return total
+        points = [value for _, value in rows if isinstance(value.get(spec.field), dict)]
+        if points:
+            handler(session, spec, points)
+        total += len(points)
+        last_id = rows[-1][0]
 
 
 def source_id(point: Point) -> str:
@@ -258,6 +284,8 @@ def _exercise(session: Session, spec: DataTypeSpec, points: list[Point]) -> None
         interval = body["interval"]
         start, end = parse_ts(interval["startTime"]), parse_ts(interval["endTime"])
         duration = parse_duration_minutes(body.get("activeDuration"))
+        metrics = body.get("metricsSummary", {})
+        distance_mm = _optional_float(metrics.get("distanceMillimeters"))
         rows.append(
             {
                 "source_key": source_id(p) or f"exercise:{interval['startTime']}",
@@ -266,11 +294,27 @@ def _exercise(session: Session, spec: DataTypeSpec, points: list[Point]) -> None
                 "local_date": _local_date(start, interval.get("startUtcOffset")),
                 "activity_type": str(body.get("exerciseType", "UNKNOWN")),
                 "duration_min": duration or (end - start).total_seconds() / 60,
-                # TODO(verify): MetricsSummary field names (calories, avg/max HR, distance,
-                # zones) once seen in a live response. Raw JSON keeps them meanwhile.
+                "calories": _optional_float(metrics.get("caloriesKcal")),
+                "avg_hr": _optional_float(metrics.get("averageHeartRateBeatsPerMinute")),
+                # Not provided by the API; Phase 3 can derive it from hr_samples.
+                "max_hr": None,
+                "distance_m": distance_mm / 1000 if distance_mm is not None else None,
+                "zones_json": _exercise_zones(metrics),
             }
         )
     upsert(session, ExerciseSession, rows, index_elements=["source_key"])
+
+
+def _exercise_zones(metrics: Point) -> dict[str, Any] | None:
+    durations = metrics.get("heartRateZoneDurations") or {}
+    zones = {
+        f"{zone}_min": parse_duration_minutes(durations.get(f"{zone}Time"))
+        for zone in ("light", "moderate", "vigorous", "peak")
+    }
+    azm = _optional_int(metrics.get("activeZoneMinutes"))
+    if azm is None and all(v is None for v in zones.values()):
+        return None
+    return {**zones, "active_zone_minutes": azm}
 
 
 # --- Daily values -> daily_metrics -------------------------------------------------------
@@ -299,6 +343,12 @@ def _daily(values_of: Callable[[Point], dict[str, Any]]) -> Handler:
         upsert(session, DailyMetric, list(rows.values()), index_elements=["date"])
 
     return handler
+
+
+def _zone_minutes_sum(body: Point) -> int | None:
+    keys = ("sumInFatBurnHeartZone", "sumInCardioHeartZone", "sumInPeakHeartZone")
+    values = [int(body[k]) for k in keys if body.get(k) is not None]
+    return sum(values) if values else None
 
 
 def _temperature_delta(body: Point) -> float | None:
@@ -342,7 +392,16 @@ _HANDLERS: dict[str, Handler] = {
         lambda b: {"skin_temp_delta_c": _temperature_delta(b)}
     ),
     "daily-vo2-max": _daily(lambda b: {"vo2_max": _optional_float(b.get("vo2Max"))}),
-    # Rollup value fields follow {field}_{aggregation}; steps' `countSum` is documented in
-    # the Steps guide. TODO(verify): totalCalories / distance / activeZoneMinutes fields.
+    # Rollup value fields follow {field}_{aggregation} (verified live 2026-10-29).
     "steps:daily": _daily(lambda b: {"steps": _optional_int(b.get("countSum"))}),
+    "distance:daily": _daily(
+        lambda b: {
+            "distance_m": int(b["millimetersSum"]) / 1000 if b.get("millimetersSum") else None
+        }
+    ),
+    "total-calories:daily": _daily(lambda b: {"total_calories": _optional_float(b.get("kcalSum"))}),
+    "active-energy-burned:daily": _daily(
+        lambda b: {"active_calories": _optional_float(b.get("kcalSum"))}
+    ),
+    "active-zone-minutes:daily": _daily(lambda b: {"active_zone_minutes": _zone_minutes_sum(b)}),
 }

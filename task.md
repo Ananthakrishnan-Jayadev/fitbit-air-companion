@@ -61,7 +61,7 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done
 ---
 
 ## Phase 2: Data in (Google Health API)
-- [ ] **Manual (you):** Google Cloud project, enable Google Health API, Web OAuth client with
+- [x] **Manual (you):** Google Cloud project, enable Google Health API, Web OAuth client with
       redirects `http://127.0.0.1:8000/api/auth/callback` + `http://localhost:8000/...`,
       Audience = Testing + self as test user, add the 4 read scopes, fill `.env`
 - [x] Copy exact base URL, endpoint paths, scope strings from official docs →
@@ -85,9 +85,12 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done
       normalization incl. midnight-crossing sleep, auth/sync/profile API
 - [x] Filter prefixes: snake_case (`heart_rate.…`), verified live 2026-10-29
 - [x] Redact OAuth `code`/`state` from access logs; quiet per-request httpx logging
-- [ ] **After the next full sync:** resolve remaining `TODO(verify)` (exercise
-      `metricsSummary`, rollup value fields, `activityLevelType` values) by inspecting
-      `data_points.value_json`, then normalize those fields
+- [x] Resolve remaining `TODO(verify)` from live data: exercise `metricsSummary`
+      (calories, distance, avg HR, zone durations), rollup totals (distance, calories,
+      active calories, AZM), `activityLevelType` labels
+- [x] CLI `fitbit db renormalize [--types]`: rebuild typed tables from raw JSON
+- Note for Phase 3: `daily_metrics.sedentary_min` and per-workout max HR are not in the API;
+  derive them from `sedentary-period` raw data and `hr_samples`
 
 ---
 

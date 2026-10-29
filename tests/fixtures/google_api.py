@@ -116,10 +116,18 @@ def sleep(
     }
 
 
-def exercise(start: str, end: str, kind: str, active_duration: str | None = None) -> Point:
+def exercise(
+    start: str,
+    end: str,
+    kind: str,
+    active_duration: str | None = None,
+    metrics: dict[str, Any] | None = None,
+) -> Point:
     body: dict[str, Any] = {"interval": _interval(start, end), "exerciseType": kind}
     if active_duration is not None:
         body["activeDuration"] = active_duration
+    if metrics is not None:
+        body["metricsSummary"] = metrics
     return {"dataPointName": _name("exercise", f"ex-{start}"), "exercise": body}
 
 
@@ -131,12 +139,17 @@ def daily(field: str, day: dt.date, **values: Any) -> Point:
     }
 
 
-def rollup_steps(day: dt.date, count: int) -> Point:
+def rollup(day: dt.date, field: str, **values: Any) -> Point:
+    """A DailyRollupDataPoint, e.g. rollup(day, "totalCalories", kcalSum=2100.5)."""
     return {
-        "civilStartTime": {"date": civil(day)},
-        "civilEndTime": {"date": civil(day + dt.timedelta(days=1))},
-        "steps": {"countSum": str(count)},
+        "civilStartTime": {"date": civil(day), "time": {}},
+        "civilEndTime": {"date": civil(day + dt.timedelta(days=1)), "time": {}},
+        field: values,
     }
+
+
+def rollup_steps(day: dt.date, count: int) -> Point:
+    return rollup(day, "steps", countSum=str(count))
 
 
 def page(points: list[Point], next_token: str | None = None) -> dict[str, Any]:

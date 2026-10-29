@@ -15,12 +15,14 @@ from fitbit_app.config import Settings, get_settings
 from fitbit_app.devserver import VITE_URL, start_vite, stop_vite
 from fitbit_app.doctor import Level, run_checks
 from fitbit_app.errors import ConfigError, FitbitAppError
+from fitbit_app.ingest.registry import select_specs
 from fitbit_app.ingest.service import SyncService
 from fitbit_app.ingest.sync import SyncReport
 from fitbit_app.logging_setup import configure_logging
 from fitbit_app.main import create_app
 from fitbit_app.storage.db import create_db_engine, create_session_factory
 from fitbit_app.storage.migrate import upgrade_to_head
+from fitbit_app.storage.normalize import renormalize
 
 app = typer.Typer(no_args_is_help=True, help="Fitbit Air companion app.")
 db_app = typer.Typer(no_args_is_help=True, help="Database commands.")
@@ -110,6 +112,36 @@ def db_upgrade() -> None:
     finally:
         engine.dispose()
     typer.secho(f"Database up to date: {settings.db_path}", fg=typer.colors.GREEN)
+
+
+@db_app.command("renormalize")
+def db_renormalize(
+    types: Annotated[
+        str | None, typer.Option(help="Comma-separated data types (default: all with raw JSON)")
+    ] = None,
+) -> None:
+    """Rebuild typed tables from stored raw JSON (no download)."""
+    settings = get_settings()
+    configure_logging(settings.log_level)
+    keys = [t.strip() for t in types.split(",") if t.strip()] if types else None
+    try:
+        specs = select_specs(include_beta=settings.enable_beta_types, keys=keys)
+    except ValueError as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(1) from exc
+
+    engine = create_db_engine(settings.db_path)
+    try:
+        upgrade_to_head(engine)
+        with create_session_factory(engine)() as session:
+            for spec in specs:
+                count = renormalize(session, spec)
+                session.commit()
+                if count:
+                    typer.echo(f"  {spec.key}: {count} points")
+    finally:
+        engine.dispose()
+    typer.secho("Typed tables rebuilt from raw data.", fg=typer.colors.GREEN)
 
 
 def _not_yet(phase: int) -> None:
