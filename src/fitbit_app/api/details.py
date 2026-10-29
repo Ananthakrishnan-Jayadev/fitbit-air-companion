@@ -186,9 +186,7 @@ def sleep(session: SessionDep, date: dt.date | None = None) -> SleepResponse:
         )
         if night
         else None,
-        stages=[
-            Stage(start=r.start_ts, end=r.end_ts, stage=r.stage) for r in stages.itertuples()
-        ]
+        stages=[Stage(start=r.start_ts, end=r.end_ts, stage=r.stage) for r in stages.itertuples()]
         if not stages.empty
         else [],
         stage_minutes=stage_minutes(stages) if not stages.empty else {},

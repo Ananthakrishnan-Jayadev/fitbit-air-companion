@@ -72,11 +72,13 @@ def generate(
         )
         day_params[day] = params
 
-        bedtime = _local(day - dt.timedelta(days=1), 23, tz) + pd.Timedelta(
-            minutes=rng.normal(0, 30)
-        )
-        duration_min = float(np.clip(rng.normal(432, 36), 240, 600))
-        wake = bedtime + pd.Timedelta(minutes=duration_min)
+        # Whole seconds: Python datetimes can't hold the nanoseconds pandas would produce.
+        bedtime = (
+            _local(day - dt.timedelta(days=1), 23, tz) + pd.Timedelta(minutes=rng.normal(0, 30))
+        ).floor("s")
+        planned_min = float(np.clip(rng.normal(432, 36), 240, 600))
+        wake = (bedtime + pd.Timedelta(minutes=planned_min)).floor("s")
+        duration_min = (wake - bedtime).total_seconds() / 60
         sessions.append(
             {
                 "session_id": i,
@@ -89,7 +91,7 @@ def generate(
         stages.extend(_sleep_stages(i, bedtime.tz_convert("UTC"), wake.tz_convert("UTC"), rng))
 
         if rng.random() < 0.5:
-            w_start = _local(day, 18, tz) + pd.Timedelta(minutes=rng.normal(0, 20))
+            w_start = (_local(day, 18, tz) + pd.Timedelta(minutes=rng.normal(0, 20))).floor("s")
             workouts.append(
                 {
                     "start_ts": w_start.tz_convert("UTC"),
@@ -146,7 +148,7 @@ def _sleep_stages(
         for stage, minutes in plan:
             if minutes <= 0 or t >= end:
                 continue
-            seg_end = min(t + pd.Timedelta(minutes=minutes), end)
+            seg_end = min((t + pd.Timedelta(minutes=minutes)).floor("s"), end)
             rows.append(
                 {"session_id": session_id, "start_ts": t, "end_ts": seg_end, "stage": stage}
             )
