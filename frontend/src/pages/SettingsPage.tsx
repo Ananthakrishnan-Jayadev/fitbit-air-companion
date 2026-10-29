@@ -1,66 +1,52 @@
-import { useHealth } from "../hooks/useHealth.ts";
+import { useSearchParams } from "react-router-dom";
+import GoogleConnectionCard from "../components/settings/GoogleConnectionCard.tsx";
+import ProfileCard from "../components/settings/ProfileCard.tsx";
+import SyncCard from "../components/settings/SyncCard.tsx";
+import SystemStatusCard from "../components/settings/SystemStatusCard.tsx";
 
-type Tone = "ok" | "warn" | "error";
-
-const DOT: Record<Tone, string> = {
-  ok: "bg-emerald-500",
-  warn: "bg-amber-500",
-  error: "bg-red-500",
+const AUTH_ERRORS: Record<string, string> = {
+  access_denied: "Google sign-in was cancelled.",
+  invalid_state: "The sign-in link expired or was already used. Try connecting again.",
+  account_not_linked:
+    "This Google account has no Google Health profile yet. Sign in to the Google Health app on your phone first, then connect again.",
+  exchange_failed: "Google sign-in failed while exchanging the code. Check the client ID, secret and redirect URI.",
+  api_error: "Connected to Google, but the Google Health API returned an error. Check the server log.",
+  secret_key: "FITBIT_SECRET_KEY is missing or invalid, so tokens cannot be stored.",
 };
 
-function StatusRow({ label, tone, detail }: { label: string; tone: Tone; detail: string }) {
-  return (
-    <li className="flex items-start gap-3 py-3">
-      <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${DOT[tone]}`} aria-hidden />
-      <div>
-        <div className="font-medium">{label}</div>
-        <div className="text-sm text-slate-600 dark:text-slate-400">{detail}</div>
-      </div>
-    </li>
-  );
-}
-
 export default function SettingsPage() {
-  const { data, isLoading } = useHealth();
+  const [params, setParams] = useSearchParams();
+  const authError = params.get("auth_error");
+  const connected = params.get("connected") === "1";
 
   return (
-    <section>
+    <section className="max-w-4xl">
       <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-      <p className="mt-1 text-slate-600 dark:text-slate-400">
-        System status. Google connection, sync and profile arrive in Phase 2.
-      </p>
 
-      <div className="mt-6 max-w-xl rounded-lg border border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-900">
-        {isLoading || !data ? (
-          <p className="py-4 text-sm text-slate-500">Loading status…</p>
-        ) : (
-          <ul className="divide-y divide-slate-200 dark:divide-slate-800">
-            <StatusRow
-              label="Database"
-              tone={data.database.ok ? "ok" : "error"}
-              detail={data.database.ok ? "Ready" : (data.database.detail ?? "Unavailable")}
-            />
-            <StatusRow
-              label="Local AI (Ollama)"
-              tone={!data.ollama ? "warn" : data.ollama.reachable && data.ollama.model_present ? "ok" : "warn"}
-              detail={
-                !data.ollama
-                  ? "Disabled (AI_ENABLED=false)"
-                  : (data.ollama.detail ?? `Model ${data.ollama.model} ready`)
-              }
-            />
-            <StatusRow
-              label="Google Health API"
-              tone={data.google.configured ? "ok" : "warn"}
-              detail={
-                data.google.configured
-                  ? "OAuth client configured (connect in Phase 2)"
-                  : "Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env"
-              }
-            />
-            <StatusRow label="App version" tone="ok" detail={data.version} />
-          </ul>
-        )}
+      {(authError || connected) && (
+        <div
+          className={`mt-4 flex items-start justify-between gap-4 rounded-md border px-4 py-2 text-sm ${
+            authError
+              ? "border-red-300 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200"
+              : "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
+          }`}
+        >
+          <span>
+            {authError
+              ? (AUTH_ERRORS[authError] ?? `Google sign-in failed (${authError}).`)
+              : "Google connected. The first sync (back to BACKFILL_DAYS) has started and may take several minutes."}
+          </span>
+          <button type="button" className="underline" onClick={() => setParams({})}>
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      <div className="mt-6 grid gap-4">
+        <GoogleConnectionCard />
+        <SyncCard />
+        <ProfileCard />
+        <SystemStatusCard />
       </div>
     </section>
   );

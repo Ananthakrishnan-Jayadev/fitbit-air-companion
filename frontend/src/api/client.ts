@@ -10,13 +10,41 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiGet<T>(path: string, signal?: AbortSignal): Promise<T> {
+async function request<T>(method: string, path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
   const response = await fetch(`/api${path}`, {
-    headers: { Accept: "application/json" },
+    method,
+    headers: {
+      Accept: "application/json",
+      ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
     signal,
   });
   if (!response.ok) {
-    throw new ApiError(response.status, `GET /api${path} failed (${response.status})`);
+    throw new ApiError(response.status, await errorMessage(response, method, path));
   }
+  if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
+}
+
+async function errorMessage(response: Response, method: string, path: string): Promise<string> {
+  try {
+    const data = (await response.json()) as { detail?: unknown };
+    if (typeof data.detail === "string") return data.detail;
+  } catch {
+    // Not JSON; fall through.
+  }
+  return `${method} /api${path} failed (${response.status})`;
+}
+
+export function apiGet<T>(path: string, signal?: AbortSignal): Promise<T> {
+  return request<T>("GET", path, undefined, signal);
+}
+
+export function apiPost<T>(path: string, body?: unknown): Promise<T> {
+  return request<T>("POST", path, body ?? {});
+}
+
+export function apiPut<T>(path: string, body: unknown): Promise<T> {
+  return request<T>("PUT", path, body);
 }
