@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator, Sequence
+from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
 from types import SimpleNamespace
 from typing import Any, TypeVar
 
@@ -40,23 +40,41 @@ class FakeLLM:
 
     model = "fake-model"
 
-    def __init__(self, chunks: Sequence[str] = ("You ", "slept ", "well.")) -> None:
-        self.generate_calls: list[tuple[list[dict[str, str]], type[BaseModel]]] = []
-        self.stream_calls: list[list[dict[str, str]]] = []
+    def __init__(
+        self,
+        chunks: Sequence[str] = ("You ", "slept ", "well."),
+        tool_call: tuple[str, dict[str, Any]] | None = None,
+    ) -> None:
+        self.generate_calls: list[tuple[list[dict[str, Any]], type[BaseModel]]] = []
+        self.stream_calls: list[list[dict[str, Any]]] = []
+        self.tool_results: list[str] = []
         self._chunks = list(chunks)
+        self._tool_call = tool_call
 
     async def generate(self, messages: Sequence[dict[str, str]], schema: type[T]) -> T:
         self.generate_calls.append((list(messages), schema))
         return schema.model_validate(SAMPLES[schema].model_dump())
 
-    async def stream(self, messages: Sequence[dict[str, str]]) -> AsyncIterator[str]:
+    async def stream(self, messages: Sequence[dict[str, Any]]) -> AsyncIterator[str]:
         self.stream_calls.append(list(messages))
+        for chunk in self._chunks:
+            yield chunk
+
+    async def stream_with_tools(
+        self,
+        messages: Sequence[dict[str, Any]],
+        tools: list[dict[str, Any]],
+        run_tool: Callable[[str, dict[str, Any]], Awaitable[str]],
+    ) -> AsyncIterator[str]:
+        self.stream_calls.append(list(messages))
+        if self._tool_call is not None:
+            self.tool_results.append(await run_tool(*self._tool_call))
         for chunk in self._chunks:
             yield chunk
 
 
 def _reply(content: str) -> SimpleNamespace:
-    return SimpleNamespace(message=SimpleNamespace(content=content))
+    return SimpleNamespace(message=SimpleNamespace(content=content, tool_calls=None))
 
 
 class FakeOllamaClient:
@@ -68,11 +86,13 @@ class FakeOllamaClient:
         replies: Sequence[str] = (),
         list_error: Exception | None = None,
         reject_think: bool = False,
+        tool_calls: Sequence[tuple[str, dict[str, Any]]] = (),
     ) -> None:
         self.models = list(models)
         self.replies = list(replies)
         self.list_error = list_error
         self.reject_think = reject_think
+        self.pending_tool_calls = list(tool_calls)
         self.chat_calls: list[dict[str, Any]] = []
 
     async def list(self) -> SimpleNamespace:
@@ -85,9 +105,21 @@ class FakeOllamaClient:
         if self.reject_think and "think" in kwargs:
             raise ResponseError('"qwen3.5:9b" does not support thinking')
         if kwargs.get("stream"):
+            if kwargs.get("tools") and self.pending_tool_calls:
+                calls, self.pending_tool_calls = self.pending_tool_calls, []
+                return self._tool_stream(calls)
             return self._stream()
         return _reply(self.replies.pop(0))
 
     async def _stream(self) -> AsyncIterator[SimpleNamespace]:
         for chunk in ("Hel", "lo", ""):
             yield _reply(chunk)
+
+    async def _tool_stream(
+        self, calls: list[tuple[str, dict[str, Any]]]
+    ) -> AsyncIterator[SimpleNamespace]:
+        tool_calls = [
+            SimpleNamespace(function=SimpleNamespace(name=name, arguments=args))
+            for name, args in calls
+        ]
+        yield SimpleNamespace(message=SimpleNamespace(content="", tool_calls=tool_calls))

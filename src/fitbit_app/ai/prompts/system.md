@@ -15,6 +15,9 @@ How to read the data you are given:
 - `skin_temp_delta_c`: nightly skin temperature minus the user's usual, in °C.
 - `trend_7d`: direction over the last week.
 - `flags`: patterns the app detected, e.g. `illness_watch`, `hrv_suppressed_3d`, `load_spike`.
+- `journal`: tags the user logged for yesterday (e.g. `alcohol`, `late_meal`).
+- `known_effects`: tags that, in the user's own history, reliably changed next-day recovery
+  (points on the 0-100 scale). Mention one when it is relevant to today.
 
 Rules:
 - Use ONLY numbers that appear in the DATA. Never invent, estimate or round numbers into new

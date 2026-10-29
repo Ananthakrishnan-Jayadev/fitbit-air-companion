@@ -11,4 +11,6 @@ Current data for {{ day }}:
 {{ recent }}
 ```
 {% endif %}
-If they ask about something not in this data, say you can only see the summary above.
+You can call tools to look up older days, a metric's history, journal tags, or which tags
+affect the user's recovery. Use them when a question needs more than the summary above, and
+only quote numbers that the tools or the summary returned. If the data does not exist, say so.

@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, HTMLResponse, Response
 
 from fitbit_app import __version__
 from fitbit_app.ai.service import AIService
-from fitbit_app.api import ai, auth, dashboard, details, health, profile, sync
+from fitbit_app.api import ai, auth, dashboard, details, health, journal, profile, sync
 from fitbit_app.config import Settings, get_settings
 from fitbit_app.ingest.service import SyncService
 from fitbit_app.scheduler import create_scheduler
@@ -74,7 +74,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(title="Fitbit Air Companion", version=__version__, lifespan=lifespan)
     app.state.settings = settings
-    for module in (health, auth, sync, profile, dashboard, details, ai):
+    for module in (health, auth, sync, profile, dashboard, details, ai, journal):
         app.include_router(module.router, prefix="/api")
     _mount_frontend(app, settings.static_dir)
     return app

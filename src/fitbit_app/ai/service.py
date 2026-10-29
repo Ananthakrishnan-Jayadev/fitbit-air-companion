@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from fitbit_app.ai import context as ctx
 from fitbit_app.ai import templates
+from fitbit_app.ai import tools as coach_tools
 from fitbit_app.ai.client import LLM
 from fitbit_app.ai.schemas import INSIGHT_SCHEMAS
 from fitbit_app.config import Settings
@@ -152,7 +153,9 @@ class AIService:
         reply: list[str] = []
         try:
             async with self._lock:
-                async for chunk in self.llm.stream(messages):
+                async for chunk in self.llm.stream_with_tools(
+                    messages, coach_tools.TOOL_DEFINITIONS, self._run_tool
+                ):
                     reply.append(chunk)
                     yield chunk
         finally:
@@ -193,6 +196,14 @@ class AIService:
             await self.generate(kind, day, force=True)
         except FitbitAppError as exc:
             logger.warning("AI generation failed: %s", exc)
+
+    async def _run_tool(self, name: str, arguments: dict[str, Any]) -> str:
+        return await asyncio.to_thread(self._run_tool_sync, name, arguments)
+
+    def _run_tool_sync(self, name: str, arguments: dict[str, Any]) -> str:
+        with self._session_factory() as session:
+            today = ctx.latest_scored_day(session) or self._clock().date()
+            return coach_tools.run_tool(session, name, arguments, today)
 
     def _build_prompt(self, kind: str, day: dt.date) -> _Prompt | None:
         with self._session_factory() as session:

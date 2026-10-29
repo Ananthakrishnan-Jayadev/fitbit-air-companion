@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
-from collections.abc import AsyncIterator, Sequence
+from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
 from typing import Any, TypeVar
 
 import httpx
@@ -18,9 +18,12 @@ from fitbit_app.errors import AIResponseError, AIUnavailableError
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T", bound=BaseModel)
-Message = dict[str, str]
+Message = dict[str, Any]
+ToolRunner = Callable[[str, dict[str, Any]], Awaitable[str]]
 
 TEMPERATURE = 0.3
+# Tool-call rounds per chat reply before the model must answer from what it has.
+MAX_TOOL_ROUNDS = 3
 _UNREACHABLE = (httpx.HTTPError, ConnectionError)
 _FENCE = re.compile(r"```(?:json)?\s*(.*?)```", re.DOTALL)
 
@@ -111,6 +114,47 @@ class LLM:
         except ResponseError as exc:
             raise AIResponseError(f"Ollama error: {exc}") from exc
 
+    async def stream_with_tools(
+        self,
+        messages: Sequence[Message],
+        tools: list[dict[str, Any]],
+        run_tool: ToolRunner,
+    ) -> AsyncIterator[str]:
+        """Stream a reply, letting the model call `tools` (executed by `run_tool`) first."""
+        model = await self.resolve_model()
+        history: list[Message] = list(messages)
+        for round_number in range(MAX_TOOL_ROUNDS + 1):
+            offered = tools if round_number < MAX_TOOL_ROUNDS else None
+            calls: list[Any] = []
+            try:
+                parts = await self._call(model, history, stream=True, tools=offered)
+                async for part in parts:
+                    text = part.message.content or ""
+                    if text:
+                        yield text
+                    calls.extend(part.message.tool_calls or [])
+            except _UNREACHABLE as exc:
+                raise AIUnavailableError("Lost connection to Ollama") from exc
+            except ResponseError as exc:
+                raise AIResponseError(f"Ollama error: {exc}") from exc
+            if not calls:
+                return
+            history.append(
+                {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [
+                        {"function": {"name": c.function.name, "arguments": c.function.arguments}}
+                        for c in calls
+                    ],
+                }
+            )
+            for call in calls:
+                name = call.function.name
+                logger.info("Coach called tool %s", name)
+                result = await run_tool(name, dict(call.function.arguments or {}))
+                history.append({"role": "tool", "content": result, "tool_name": name})
+
     async def _chat(self, messages: list[Message], format_: dict[str, Any]) -> str:
         model = await self.resolve_model()
         try:
@@ -126,6 +170,7 @@ class LLM:
         *,
         stream: bool,
         format_: dict[str, Any] | None = None,
+        tools: list[dict[str, Any]] | None = None,
     ) -> Any:
         kwargs: dict[str, Any] = {
             "model": model,
@@ -135,6 +180,8 @@ class LLM:
         }
         if format_ is not None:
             kwargs["format"] = format_
+        if tools:
+            kwargs["tools"] = tools
         if self._think is not None:
             kwargs["think"] = self._think
         try:

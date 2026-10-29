@@ -14,11 +14,15 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from fitbit_app.analytics.features import feature_pack, trend_direction
+from fitbit_app.journal import effects_for, tags_by_day
 from fitbit_app.storage.models import DailyMetric, ExerciseSession, Score
 from fitbit_app.storage.queries import DayClock, main_sleep
 
 # Sections dropped (in this order) when the context is over budget.
-OPTIONAL_SECTIONS = ("workouts", "recovery_drivers", "trend_7d", "sleep")
+OPTIONAL_SECTIONS = ("workouts", "known_effects", "recovery_drivers", "trend_7d", "sleep")
+# Journal history used to find which tags reliably move next-day recovery.
+EFFECT_WINDOW_DAYS = 180
+MAX_KNOWN_EFFECTS = 3
 MAX_CONTEXT_CHARS = 6000
 
 TREND_SOURCES = {
@@ -77,6 +81,7 @@ def day_context(session: Session, day: dt.date) -> dict[str, Any] | None:
         name: trend_direction([_value(history.get(d), source, field) for d in _days(day, 7)])
         for name, (source, field) in TREND_SOURCES.items()
     }
+    yesterday_tags = tags_by_day(session, day - dt.timedelta(days=1), day - dt.timedelta(days=1))
     pack = feature_pack(
         day=day,
         scores=scores,
@@ -85,7 +90,9 @@ def day_context(session: Session, day: dt.date) -> dict[str, Any] | None:
         trends=trends,
         flags=components.get("flags") or [],
         sleep=_sleep_summary(session, day, components.get("sleep")),
+        journal=next(iter(yesterday_tags.values()), []),
     )
+    pack["known_effects"] = _known_effects(session, day)
     drivers = (components.get("recovery") or {}).get("components") or {}
     pack["recovery_drivers"] = {k: round(v) for k, v in drivers.items() if v is not None}
     pack["workouts"] = _workouts(session, day - dt.timedelta(days=1), day)
@@ -190,6 +197,18 @@ def _sleep_summary(
         for stage, minutes in (sleep_json.get("stage_minutes") or {}).items():
             summary[f"{stage}_min"] = round(minutes)
     return summary
+
+
+def _known_effects(session: Session, day: dt.date) -> list[dict[str, Any]]:
+    """Tags that reliably moved next-day recovery in the user's own history."""
+    effects, _ = effects_for(
+        session, "recovery", day - dt.timedelta(days=EFFECT_WINDOW_DAYS), day - dt.timedelta(days=1)
+    )
+    return [
+        {"tag": e.tag, "next_day_recovery_change": e.difference, "days_with_tag": e.n_with}
+        for e in effects
+        if e.confident
+    ][:MAX_KNOWN_EFFECTS]
 
 
 def _workouts(session: Session, start: dt.date, end: dt.date) -> list[dict[str, Any]]:
