@@ -66,3 +66,116 @@ export interface Profile {
   max_hr: number | null;
   sleep_need_min: number | null;
 }
+
+// --- Phase 3: scores and details -------------------------------------------------------
+
+/** [epoch milliseconds, value] */
+export type Point = [number, number];
+
+export interface BaselineBand {
+  typical: number;
+  low: number;
+  high: number;
+}
+
+export interface TodayResponse {
+  date: string;
+  first_date: string | null;
+  last_date: string | null;
+  recovery: number | null;
+  sleep_perf: number | null;
+  strain: number | null;
+  strain_target: [number, number] | null;
+  stress_avg: number | null;
+  illness_risk: number | null;
+  flags: string[];
+  acwr: number | null;
+  components: {
+    sleep?: { components?: Record<string, number | null>; asleep_min?: number } | null;
+    recovery?: { components?: Record<string, number | null>; penalties?: Record<string, number> };
+    strain?: { trimp?: number; max_hr?: number; max_hr_method?: string } | null;
+  };
+  z: Record<string, number | null>;
+  metrics: Record<string, number | null>;
+  baselines: Record<string, BaselineBand>;
+}
+
+export interface TrendResponse {
+  metric: string;
+  points: { date: string; value: number | null; baseline: BaselineBand | null }[];
+}
+
+export interface HeartResponse {
+  date: string;
+  utc_offset_min: number;
+  samples: Point[];
+  sample_count: number;
+  resting_hr: number | null;
+  hrv_rmssd_ms: number | null;
+  min_bpm: number | null;
+  max_bpm: number | null;
+  zones: { zone: string; min_bpm: number | null; max_bpm: number | null }[];
+}
+
+export interface SleepStageOut {
+  start: string;
+  end: string;
+  stage: string;
+}
+
+export interface SleepResponse {
+  date: string;
+  utc_offset_min: number;
+  night: {
+    start: string;
+    end: string;
+    duration_min: number;
+    efficiency: number | null;
+    is_main: boolean;
+  } | null;
+  stages: SleepStageOut[];
+  stage_minutes: Record<string, number>;
+  score: number | null;
+  components: { components?: Record<string, number | null>; asleep_min?: number };
+  spo2: Point[];
+  hrv: Point[];
+  skin_temp_delta_c: number | null;
+  respiratory_rate: number | null;
+  spo2_avg: number | null;
+}
+
+export interface NightSummary {
+  date: string;
+  start: string;
+  end: string;
+  bedtime_local: string;
+  wake_local: string;
+  duration_min: number;
+  asleep_min: number | null;
+  stage_minutes: Record<string, number>;
+  score: number | null;
+}
+
+export interface Workout {
+  date: string;
+  start: string;
+  end: string;
+  activity_type: string;
+  duration_min: number;
+  calories: number | null;
+  avg_hr: number | null;
+  max_hr: number | null;
+  distance_m: number | null;
+  zones: Record<string, number | null> | null;
+}
+
+export interface ActivityResponse {
+  date: string;
+  utc_offset_min: number;
+  hourly: { start: number; steps: number; calories: number }[];
+  level_minutes: Record<string, number>;
+  stress: Point[];
+  stress_avg: number | null;
+  totals: Record<string, number | null>;
+  workouts: Workout[];
+}
