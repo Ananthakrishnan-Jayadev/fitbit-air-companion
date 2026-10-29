@@ -9,7 +9,7 @@ def test_defaults() -> None:
     settings = Settings(_env_file=None)
     assert settings.host == "127.0.0.1"
     assert settings.port == 8000
-    assert settings.ollama_model == "gemma4:31b"
+    assert settings.ollama_model == "qwen3.5:9b"
     assert settings.ai_enabled is True
     assert settings.google_configured is False
 

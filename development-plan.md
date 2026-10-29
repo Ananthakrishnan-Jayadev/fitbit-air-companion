@@ -96,7 +96,7 @@ last-sync times.
 ---
 
 ## Phase 4: Local AI coach (Ollama)
-**Goal:** `gemma4:31b` explains your data and gives tips, fully offline.
+**Goal:** `qwen3.5:9b` explains your data and gives tips, fully offline.
 
 **Scope**
 - Ollama client wrapper: timeout, model-present check, fallback model, status endpoint

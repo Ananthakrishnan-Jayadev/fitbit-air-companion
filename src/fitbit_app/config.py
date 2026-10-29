@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     # Local AI
     ai_enabled: bool = True
     ollama_host: str = "http://127.0.0.1:11434"
-    ollama_model: str = "gemma4:31b"
+    ollama_model: str = "qwen3.5:9b"
     ollama_fallback_model: str | None = None
     ollama_timeout_s: float = 300.0
     ollama_num_ctx: int = 16384

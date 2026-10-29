@@ -16,7 +16,7 @@ _Last updated: 2026-10-29_
   intraday (minute-level and finer) series that most apps ignore.
 - Compute our own scores: recovery, strain, sleep performance, stress, and illness/anomaly
   flags, with personal baselines.
-- Use a **local Ollama model** (`gemma4:31b` by default) for a daily brief, tips, and
+- Use a **local Ollama model** (`qwen3.5:9b` by default) for a daily brief, tips, and
   a chat "coach" grounded in the computed metrics.
 - Run with **one command in one terminal**: `.venv/bin/fitbit serve`.
 
@@ -112,7 +112,7 @@ fitbit = "fitbit_app.cli:app"
                         │   │           │                                             │    │
                         │   │           ▼                                             │    │
                         │   │  ai/   ContextBuilder → prompts → ollama AsyncClient ───┼──► Ollama
-                        │   │           │                   (gemma4:31b, localhost)   │   :11434
+                        │   │           │                   (qwen3.5:9b, localhost)   │   :11434
                         │   │           ▼                                             │    │
                         │   │  api/   FastAPI routers (/api/...) + SSE chat           │    │
                         │   │  web/   static React build at "/"                       │    │
@@ -239,12 +239,12 @@ Scores are recomputed for affected dates after each sync (sleep revisions shift 
 ### 8.1 Configuration
 ```
 OLLAMA_HOST=http://127.0.0.1:11434
-OLLAMA_MODEL=gemma4:31b
+OLLAMA_MODEL=qwen3.5:9b
 OLLAMA_TIMEOUT_S=300
 OLLAMA_NUM_CTX=16384
 AI_ENABLED=true
 ```
-A 31B model is slow on consumer hardware, so **all generation is asynchronous and cached**.
+Local generation is slow compared to page loads, so **all generation is asynchronous and cached**.
 The UI never blocks on the LLM except in chat, which streams.
 
 ### 8.2 Principle: the LLM never sees raw series
@@ -386,7 +386,7 @@ python3.12 -m venv .venv
 npm --prefix frontend install
 .venv/bin/fitbit build-ui
 cp .env.example .env              # add Google OAuth client id/secret
-ollama pull gemma4:31b            # if not already present
+ollama pull qwen3.5:9b            # if not already present
 .venv/bin/fitbit serve            # open http://127.0.0.1:8000 → Settings → Connect Google
 ```
 
@@ -396,7 +396,8 @@ ollama pull gemma4:31b            # if not already present
 - Binds to `127.0.0.1` by default. `--host 0.0.0.0` only when you choose to (e.g. over
   Tailscale).
 - `.env`, `data/` and tokens are gitignored. The DB file is created with permissions `0600`.
-- The LLM is local. No health data is sent to any third party besides Google, which is the
+- The LLM is local. Do not use Ollama `*-cloud` models: they run remotely and would send
+  health data off the machine. No health data is sent to any third party besides Google, which is the
   source of the data anyway.
 - OAuth app stays in "Testing" mode (personal use; test-user tokens may expire after 7 days
   in Testing mode, which the UI surfaces as "reconnect").
@@ -410,7 +411,7 @@ ollama pull gemma4:31b            # if not already present
 | Endpoint/scope details may change | Single `endpoints.py`/`scopes.py`; `fitbit doctor` validates |
 | Historical depth available via API is unknown | Backfill tolerant to empty ranges; log earliest available date |
 | Intraday volume (2–5 s HR) | Typed tables with indexes; LTTB downsampling for charts; optional Parquet archive later |
-| `gemma4:31b` latency / RAM | Async + cached generation; configurable smaller model fallback (`OLLAMA_FALLBACK_MODEL`) |
+| Local model latency / RAM (qwen3.5:9b ≈ 6.6 GB) | Async + cached generation; configurable smaller model fallback (`OLLAMA_FALLBACK_MODEL`) |
 | Testing-mode token expiry | Clear re-auth UX |
 | Home-made scores are not validated | Show component breakdowns; label as estimates |
 

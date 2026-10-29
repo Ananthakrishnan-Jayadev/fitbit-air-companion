@@ -30,7 +30,7 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done
 
 ### Backend skeleton
 - [x] `config.py`: pydantic-settings (`GOOGLE_CLIENT_ID/SECRET`, `FITBIT_SECRET_KEY`,
-      `OLLAMA_HOST`, `OLLAMA_MODEL=gemma4:31b`, `OLLAMA_FALLBACK_MODEL`, `DATA_DIR`, `HOST`,
+      `OLLAMA_HOST`, `OLLAMA_MODEL=qwen3.5:9b`, `OLLAMA_FALLBACK_MODEL`, `DATA_DIR`, `HOST`,
       `PORT`, `SYNC_INTERVAL_MIN`, `AI_ENABLED`)
 - [x] `errors.py` (exception hierarchy) + logging setup
 - [x] `main.py`: app factory, lifespan hooks, `/api/health`, static mount with SPA fallback

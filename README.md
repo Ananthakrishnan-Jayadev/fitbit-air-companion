@@ -22,7 +22,7 @@ python3.12 -m venv .venv
 npm --prefix frontend install
 .venv/bin/fitbit build-ui
 cp .env.example .env              # then fill in values
-ollama pull gemma4:31b            # if not already present
+ollama pull qwen3.5:9b            # if not already present
 ```
 
 ## Run (one terminal)
