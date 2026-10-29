@@ -43,7 +43,7 @@ def test_metric_history(scored: sessionmaker[Session]) -> None:
         "get_metric_history",
         {"metric": "resting_hr", "start_date": START.isoformat(), "end_date": end.isoformat()},
     )
-    assert [d["date"] for d in result["days"]][0] == START.isoformat()
+    assert result["days"][0]["date"] == START.isoformat()
     assert len(result["days"]) == 7
     assert result["min"] <= result["mean"] <= result["max"]
 
