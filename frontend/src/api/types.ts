@@ -179,3 +179,59 @@ export interface ActivityResponse {
   totals: Record<string, number | null>;
   workouts: Workout[];
 }
+
+// --- Phase 4: AI coach -----------------------------------------------------------------
+
+export interface AIStatus {
+  enabled: boolean;
+  reachable: boolean;
+  model: string;
+  model_present: boolean;
+  busy: boolean;
+  detail: string | null;
+}
+
+export interface DailyBriefContent {
+  headline: string;
+  summary: string;
+  tips: { title: string; detail: string; category: string }[];
+}
+
+export interface WeeklyReviewContent {
+  headline: string;
+  summary: string;
+  wins: string[];
+  watch: string[];
+  focus: string;
+}
+
+export interface AnomalyContent {
+  headline: string;
+  explanation: string;
+  suggestions: string[];
+  see_doctor_if: string;
+}
+
+export interface InsightOut<T> {
+  kind: string;
+  date: string;
+  model: string;
+  created_at: string;
+  content: T;
+}
+
+export interface InsightsResponse {
+  date: string | null;
+  busy: boolean;
+  daily_brief: InsightOut<DailyBriefContent> | null;
+  anomaly: InsightOut<AnomalyContent> | null;
+  weekly_review: InsightOut<WeeklyReviewContent> | null;
+}
+
+export type InsightKind = "daily_brief" | "weekly_review" | "anomaly";
+
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+  created_at?: string;
+}

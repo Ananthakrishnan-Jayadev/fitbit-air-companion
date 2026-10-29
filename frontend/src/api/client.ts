@@ -48,3 +48,17 @@ export function apiPost<T>(path: string, body?: unknown): Promise<T> {
 export function apiPut<T>(path: string, body: unknown): Promise<T> {
   return request<T>("PUT", path, body);
 }
+
+/** POST JSON and return the raw streaming response (for server-sent events). */
+export async function apiPostStream(path: string, body: unknown, signal?: AbortSignal): Promise<Response> {
+  const response = await fetch(`/api${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+    body: JSON.stringify(body),
+    signal,
+  });
+  if (!response.ok || !response.body) {
+    throw new ApiError(response.status, await errorMessage(response, "POST", path));
+  }
+  return response;
+}

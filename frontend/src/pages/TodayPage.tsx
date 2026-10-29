@@ -1,4 +1,5 @@
 import type { TodayResponse } from "../api/types.ts";
+import BriefCard from "../components/BriefCard.tsx";
 import { DataTable } from "../components/ChartCard.tsx";
 import { useChartTokens } from "../components/charts/tokens.ts";
 import DateNav from "../components/DateNav.tsx";
@@ -182,6 +183,10 @@ export default function TodayPage() {
       </div>
 
       {data.flags.length > 0 && <Flags flags={data.flags} />}
+
+      <div className="mt-4">
+        <BriefCard date={data.date} />
+      </div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-3 xl:grid-cols-5">
         {ACTIVITY_TILES.map((m) => (

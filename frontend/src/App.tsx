@@ -4,6 +4,7 @@ import Layout from "./components/Layout.tsx";
 import PlaceholderPage from "./components/PlaceholderPage.tsx";
 import { NAV_ITEMS } from "./navigation.ts";
 import ActivityPage from "./pages/ActivityPage.tsx";
+import CoachPage from "./pages/CoachPage.tsx";
 import HeartPage from "./pages/HeartPage.tsx";
 import SettingsPage from "./pages/SettingsPage.tsx";
 import SleepPage from "./pages/SleepPage.tsx";
@@ -16,6 +17,7 @@ const PAGES: Record<string, ComponentType> = {
   "/sleep": SleepPage,
   "/activity": ActivityPage,
   "/trends": TrendsPage,
+  "/coach": CoachPage,
   "/settings": SettingsPage,
 };
 
