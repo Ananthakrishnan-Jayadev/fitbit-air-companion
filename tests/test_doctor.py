@@ -17,9 +17,7 @@ def _by_name(results: list[CheckResult]) -> dict[str, CheckResult]:
     return {r.name: r for r in results}
 
 
-def _fake_ollama(
-    reachable: bool, present: bool
-) -> Callable[[str, str], Awaitable[OllamaStatus]]:
+def _fake_ollama(reachable: bool, present: bool) -> Callable[[str, str], Awaitable[OllamaStatus]]:
     async def fake(host: str, model: str) -> OllamaStatus:
         detail = None if present else "x"
         return OllamaStatus(reachable=reachable, model=model, model_present=present, detail=detail)
