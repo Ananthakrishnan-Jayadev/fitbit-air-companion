@@ -8,6 +8,6 @@ export function fetchAuthStatus(signal?: AbortSignal): Promise<AuthStatus> {
   return apiGet<AuthStatus>("/auth/status", signal);
 }
 
-export function logout(): Promise<void> {
-  return apiPost<void>("/auth/logout");
+export async function logout(): Promise<void> {
+  await apiPost<unknown>("/auth/logout");
 }
