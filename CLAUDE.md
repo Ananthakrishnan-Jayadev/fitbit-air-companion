@@ -1,7 +1,8 @@
 # CLAUDE.md: Build rules for this project
 
-Rules for anyone (human or AI) building this repo. Read [project.md](project.md) for the
-architecture and [task.md](task.md) for the checklist before starting work.
+Rules for anyone (human or AI) building this repo. Before starting work, read
+[project.md](project.md) for the architecture, [development-plan.md](development-plan.md) for
+the 5 phases and their exit criteria, and [task.md](task.md) for the checklist.
 
 ---
 
