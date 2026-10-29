@@ -250,7 +250,7 @@ no I/O.
 | `load.py` | Acute:chronic ratio | 7-day / 28-day mean strain (needs 21 days); ≥1.5 `load_spike`, ≤0.8 `load_low` |
 | `activity.py` | Sedentary minutes/day | Raw sedentary periods split at local midnight |
 | `downsample.py` | Chart series | LTTB (keeps peaks) |
-| `correlations.py` | "What affects you" | Phase 5 |
+| `correlations.py` | "What affects you" | Journal tag on day D vs outcome on D+1 (recovery, sleep, HRV, RHR); only logged days count; ≥5 days with and without; bootstrap 95% CI; "confident" when it excludes 0 |
 | `features.py` | Feature pack for the LLM | See §8.2 |
 
 `scoring.py` (ScoreService) runs these per local day, oldest first, after every sync (all
@@ -320,7 +320,9 @@ holds up syncing.
   `POST /api/ai/chat` (SSE: `conversation_id`, `delta`…, `done`/`error`),
   `GET /api/ai/chat/{conversation_id}`. CLI: `fitbit brief [--date] [--kind] [--force]`.
 - If Ollama is down or `AI_ENABLED=false`, everything else works; AI cards show why.
-- Later (Phase 5): Ollama **tool calling** so chat can query history ("my HRV in September").
+- Chat **tool calling** (`ai/tools.py`): `get_metric_history`, `get_day_summary`,
+  `get_journal`, `get_tag_effects`. Read-only, arguments validated (bad ones are returned to
+  the model as an error), ranges capped at 366 days, at most 3 tool rounds per reply.
 
 ---
 

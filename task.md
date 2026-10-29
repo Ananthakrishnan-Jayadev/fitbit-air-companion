@@ -145,16 +145,22 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done
 ---
 
 ## Phase 5: Journal, insights and hardening
-- [ ] API `/api/journal` (GET/POST/DELETE)
-- [ ] **Journal page**: daily tags + notes
-- [ ] `analytics/correlations.py`: tags vs next-day outcomes (min N, bootstrap CI)
-- [ ] API `/api/correlations` + "What affects you" view; add to feature pack
-- [ ] Coach tool calling: `get_metric(name, range)`, `get_sleep(date)`
-- [ ] Data export (CSV/Parquet) from Settings
-- [ ] CLI `fitbit db backup`
-- [ ] Log files in `data/logs/`; review logs for health values/secrets
-- [ ] Re-auth UX polish; README troubleshooting; final `doctor` pass
-- [ ] pytest: journal API, correlations, tool-call handling, export/backup
+- [x] API `/api/journal` (GET/PUT/DELETE) + `/api/journal/tags`; tag normalization
+- [x] **Journal page**: preset + custom tag chips, notes, last 14 days
+- [x] `analytics/correlations.py`: tag vs next-day outcome, bootstrap 95% CI, ≥5 days each
+- [x] API `/api/correlations` + "What affects you" table; yesterday's tags and confident
+      effects added to the coach's context
+- [x] Coach tool calling: `get_metric_history`, `get_day_summary`, `get_journal`,
+      `get_tag_effects` (read-only, validated, ≤3 rounds per reply)
+- [x] Data export: ZIP of CSVs from Settings (`/api/export`) and `fitbit export`
+      (CSV rather than Parquet: no new dependency); credentials never exported
+- [x] CLI `fitbit db backup` (SQLite online backup, 0600)
+- [x] Log file `data/logs/fitbit.log` (rotating); logs carry no health values or secrets
+- [x] Global "reconnect Google" banner; `doctor` data-freshness check; README troubleshooting
+- [x] Frontend code splitting (lazy chart pages, separate ECharts chunk)
+- [x] pytest: correlations, journal API, tools, export/backup, log file
+- [ ] **You:** run checks; try the Journal, a coach question about older data
+      ("How was my HRV in September?"), and an export
 
 ---
 
