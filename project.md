@@ -45,6 +45,7 @@ _Last updated: 2026-10-29_
 | Frontend | **React 18 + Vite + TypeScript** | |
 | UI data | **TanStack Query**, **React Router** | Caching and routing |
 | Charts | **Apache ECharts** (`echarts-for-react`) | Handles large intraday series (tens of thousands of points) |
+| Animation | **Motion** (`motion/react`) | Enter/layout animations, count-ups; honours reduced motion (Phase 6, design.md) |
 | Styling | **Tailwind CSS** | |
 | Python tooling | `venv` + `pip install -e .`, **ruff**, **pytest** | |
 | JS tooling | npm, ESLint | No JS test runner; **pytest is the only test framework** (see CLAUDE.md) |

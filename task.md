@@ -164,6 +164,17 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done
 
 ---
 
+## Phase 6: UI refresh (design.md)
+- [ ] Add `motion` dependency (`package.json`; you run `npm --prefix frontend install`)
+- [ ] Theme: Light / Dark / System toggle; Tailwind `class` dark mode; chart tokens follow it
+- [ ] Motion system: tokens, `MotionConfig reducedMotion="user"`, page fade-in, card stagger
+- [ ] Today hero: count-up recovery, status glow + label, coach verdict, "Ask why", 7-day strip
+- [ ] "Ask about this" links (Today, Heart, Sleep, Activity) → Coach page with `?q=` prefilled
+- [ ] Coach: prefill from `?q=`, suggested follow-ups, animated messages, `aria-live`
+- [ ] ⌘K / Ctrl+K command palette; mobile bottom tab bar
+- [ ] Accessibility: skip link, focus rings, contrast check in both themes
+- [ ] Docs: project.md §2/§10, README
+
 ## Possible next steps
 - [ ] Brief accuracy: give the model precomputed comparisons (e.g. strain vs yesterday) and
       check that every number in a brief appears in its input data
