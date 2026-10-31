@@ -1,6 +1,7 @@
 import { apiGet } from "./client.ts";
 import type {
   ActivityResponse,
+  DayRow,
   HeartResponse,
   NightSummary,
   SleepResponse,
@@ -45,4 +46,8 @@ export function fetchActivity(date: string | undefined, signal?: AbortSignal): P
 
 export function fetchExercise(start: string, end: string, signal?: AbortSignal): Promise<Workout[]> {
   return apiGet<Workout[]>(`/exercise?start=${start}&end=${end}`, signal);
+}
+
+export function fetchDaily(start: string, end: string, signal?: AbortSignal): Promise<DayRow[]> {
+  return apiGet<DayRow[]>(`/daily?start=${start}&end=${end}`, signal);
 }

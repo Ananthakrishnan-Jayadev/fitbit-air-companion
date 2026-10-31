@@ -77,6 +77,7 @@ export default function HeartPage() {
       <div className="mt-4">
         <ChartCard
           title="Heart rate through the day"
+          ask={`How did my heart rate look through the day on ${data.date}?`}
           subtitle={`${formatNumber(data.sample_count)} readings, simplified for display (peaks kept)`}
           table={{
             columns: ["Time", "bpm"],

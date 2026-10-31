@@ -28,14 +28,13 @@ function readTokens(): ChartTokens {
   return Object.fromEntries(entries) as ChartTokens;
 }
 
-/** CSS chart tokens, re-read when the OS switches between light and dark. */
+/** CSS chart tokens, re-read whenever the theme (the `dark` class on <html>) changes. */
 export function useChartTokens(): ChartTokens {
   const [tokens, setTokens] = useState<ChartTokens>(readTokens);
   useEffect(() => {
-    const query = window.matchMedia("(prefers-color-scheme: dark)");
-    const update = () => setTokens(readTokens());
-    query.addEventListener("change", update);
-    return () => query.removeEventListener("change", update);
+    const observer = new MutationObserver(() => setTokens(readTokens()));
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
   }, []);
   return tokens;
 }

@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import type { JournalEntry, Outcome, TagEffect } from "../api/types.ts";
 import { DataTable } from "../components/ChartCard.tsx";
 import { BUTTON, BUTTON_SECONDARY, INPUT } from "../components/settings/Card.tsx";
-import { addDays, formatDayLabel, formatNumber } from "../format.ts";
+import { addDays, formatDayLabel, formatNumber, localTodayIso } from "../format.ts";
 import { useCorrelations, useJournal, useSaveJournal, useTags } from "../hooks/useJournal.ts";
 import { useSelectedDate } from "../hooks/useSelectedDate.ts";
 import { metricDef } from "../metrics.ts";
@@ -15,10 +15,6 @@ const OUTCOMES: { key: Outcome; label: string }[] = [
   { key: "sleep_min", label: "Time asleep that night" },
 ];
 const HISTORY_DAYS = 14;
-
-function localToday(): string {
-  return new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD in local time
-}
 
 function tagLabel(tag: string): string {
   return tag.replaceAll("_", " ");
@@ -169,7 +165,7 @@ function WhatAffectsYou() {
 
 export default function JournalPage() {
   const [selected, setDate] = useSelectedDate();
-  const today = localToday();
+  const today = localTodayIso();
   const date = selected ?? today;
   const historyStart = addDays(date, -(HISTORY_DAYS - 1));
   const journal = useJournal(historyStart, date);

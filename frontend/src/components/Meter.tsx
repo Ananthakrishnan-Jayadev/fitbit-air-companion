@@ -1,4 +1,7 @@
-/** Horizontal 0..max meter: filled part + lighter track. */
+import { motion } from "motion/react";
+import { COUNT } from "../motion.ts";
+
+/** Horizontal 0..max meter: filled part (animates in) + lighter track. */
 export default function Meter({
   value,
   max = 100,
@@ -20,7 +23,13 @@ export default function Meter({
       aria-valuemax={max}
       aria-valuenow={value ?? undefined}
     >
-      <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
+      <motion.div
+        className="h-full rounded-full"
+        style={{ backgroundColor: color }}
+        initial={{ width: 0 }}
+        animate={{ width: `${pct}%` }}
+        transition={COUNT}
+      />
     </div>
   );
 }

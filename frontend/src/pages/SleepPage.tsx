@@ -173,6 +173,7 @@ export default function SleepPage() {
           <div className="mt-4 grid gap-4 lg:grid-cols-[2fr_1fr]">
             <ChartCard
               title="Sleep stages"
+              ask={`How did I sleep the night before ${data.date}?`}
               table={{
                 columns: ["From", "To", "Stage"],
                 rows: data.stages.map((s) => [formatClock(s.start), formatClock(s.end), STAGE_LABELS[s.stage] ?? s.stage]),

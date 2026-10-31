@@ -130,6 +130,7 @@ export default function ActivityPage() {
       <div className="mt-4 grid gap-4 lg:grid-cols-[2fr_1fr]">
         <ChartCard
           title="Steps by hour"
+          ask={`How active was I on ${data.date}?`}
           table={{
             columns: ["Hour", "Steps", "Calories"],
             rows: data.hourly.map((h) => [hourLabel(h.start), h.steps, formatNumber(h.calories)]),
@@ -152,6 +153,7 @@ export default function ActivityPage() {
       <div className="mt-4">
         <ChartCard
           title="Stress through the day"
+          ask={`What drove my stress on ${data.date}?`}
           subtitle={`Day average ${formatNumber(data.stress_avg)} / 100 · only calm, awake minutes are scored`}
           table={{
             columns: ["Time", "Stress"],

@@ -271,3 +271,9 @@ export interface CorrelationsResponse {
   logged_days: number;
   effects: TagEffect[];
 }
+
+export interface DayRow {
+  date: string;
+  scores: Record<string, number | null>;
+  metrics: Record<string, number | null>;
+}

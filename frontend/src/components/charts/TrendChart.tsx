@@ -73,6 +73,7 @@ export default function TrendChart({ metric, days, end, height = 240 }: TrendCha
   return (
     <ChartCard
       title={def.label}
+      ask={`How has my ${def.label.toLowerCase()} trended over the last ${days} days?`}
       subtitle={hasBand ? "Shaded: your normal range (30-day average ± 1 SD)" : `Last ${days} days`}
       table={{
         columns: ["Date", def.label, "Normal range"],

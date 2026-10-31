@@ -56,3 +56,12 @@ export const FLAG_TEXT: Record<string, string> = {
   load_spike: "Training load jumped well above your recent average",
   load_low: "Training load is well below your recent average",
 };
+
+export type RecoveryTone = "good" | "warning" | "critical";
+
+/** Recovery bands (shown with a text label, never colour alone). */
+export function recoveryBand(score: number): { label: string; tone: RecoveryTone } {
+  if (score >= 67) return { label: "High", tone: "good" };
+  if (score >= 34) return { label: "Moderate", tone: "warning" };
+  return { label: "Low", tone: "critical" };
+}

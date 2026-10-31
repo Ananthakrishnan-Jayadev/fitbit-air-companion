@@ -16,7 +16,9 @@ model.
 - **Scores** each day against your own 30-day baseline: recovery, sleep, strain (with a
   daily target), stress, and illness / overreach warnings.
 - **Pages:** Today, Heart, Sleep, Activity, Trends, Journal ("what affects you"), Coach,
-  Settings. Every chart has a table view.
+  Settings. Every chart has a table view and an "Ask the coach" link.
+- **Interface:** Light / Dark / Auto theme, ⌘K (Ctrl+K) command palette, mobile tab bar,
+  subtle animations that turn off with your OS "reduce motion" setting.
 - **Local AI coach** (Ollama, default `qwen3.5:9b`): daily brief, weekly review, anomaly
   notes, and a chat that can look up your history. It sees summaries only, never raw data,
   and nothing leaves your machine except the Google sync itself.

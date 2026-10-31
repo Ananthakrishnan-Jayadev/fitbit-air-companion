@@ -365,7 +365,7 @@ Intraday series are `[epoch_ms, value]` pairs. Day-level dates are local days.
 
 | Page | Contents |
 |---|---|
-| **Today** | Recovery (large number + meter, High/Moderate/Low), sleep / strain (with target) / stress tiles, flags, activity tiles, "compared with your normal" table, recovery + sleep breakdowns, coach's brief (+ anomaly note, weekly review) |
+| **Today** | 7-day recovery strip; recovery hero (count-up number, status glow + label, coach verdict, "Ask why"), sleep / strain (with target) / stress tiles, flags, activity tiles, "compared with your normal" table, recovery + sleep breakdowns, coach's brief (+ anomaly note, weekly review) |
 | **Heart** | Intraday HR with resting line, Google HR zones, 60-day resting HR and HRV trends |
 | **Sleep** | Hypnogram, minutes per stage, overnight SpO2 and HRV, breathing rate, skin temperature, last 14 nights |
 | **Activity** | Daily totals, steps by hour, minutes per activity level, stress timeline, workouts |
@@ -373,6 +373,11 @@ Intraday series are `[epoch_ms, value]` pairs. Day-level dates are local days.
 | **Journal** | Tag chips (presets + custom) and notes per day, "What affects you" table, last 14 days |
 | **Coach** | Streaming chat with the local model (can look up history via tools) |
 | **Settings** | Google connection, per-type sync status + backfill, profile, data download, system status |
+
+App shell (Phase 6, see design.md): Light / Dark / Auto theme toggle, ⌘K command palette,
+skip link and focus rings, mobile header + bottom tab bar, and Motion animations (page fade,
+staggered cards, count-up numbers, filling meters) that respect the OS reduce-motion setting.
+"Ask the coach" links on scores and charts open the Coach page with a prepared question.
 
 Charts: ECharts (tree-shaken, own chunk), reference dataviz palette as CSS tokens (light/dark),
 one y-axis per chart, hover tooltips, and a table view on every chart. Chart pages load lazily.

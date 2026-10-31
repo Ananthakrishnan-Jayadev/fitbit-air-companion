@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import AskLink from "./AskLink.tsx";
 
 export interface TableData {
   columns: string[];
@@ -9,11 +10,13 @@ interface ChartCardProps {
   title: string;
   subtitle?: string;
   table?: TableData;
+  /** Question prefilled on the Coach page by the "Ask the coach" link. */
+  ask?: string;
   children: ReactNode;
 }
 
 /** A chart with a title and a table-view twin (every value readable without the chart). */
-export default function ChartCard({ title, subtitle, table, children }: ChartCardProps) {
+export default function ChartCard({ title, subtitle, table, ask, children }: ChartCardProps) {
   const [showTable, setShowTable] = useState(false);
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
@@ -22,15 +25,18 @@ export default function ChartCard({ title, subtitle, table, children }: ChartCar
           <h2 className="text-sm font-semibold">{title}</h2>
           {subtitle && <p className="text-xs text-slate-500 dark:text-slate-400">{subtitle}</p>}
         </div>
-        {table && table.rows.length > 0 && (
-          <button
-            type="button"
-            className="shrink-0 text-xs text-slate-500 underline hover:text-slate-800 dark:hover:text-slate-200"
-            onClick={() => setShowTable((v) => !v)}
-          >
-            {showTable ? "Show chart" : "Show table"}
-          </button>
-        )}
+        <div className="flex shrink-0 items-center gap-3">
+          {ask && <AskLink question={ask} />}
+          {table && table.rows.length > 0 && (
+            <button
+              type="button"
+              className="text-xs text-slate-500 underline hover:text-slate-800 dark:hover:text-slate-200"
+              onClick={() => setShowTable((v) => !v)}
+            >
+              {showTable ? "Show chart" : "Show table"}
+            </button>
+          )}
+        </div>
       </header>
       {showTable && table ? <DataTable data={table} /> : children}
     </section>

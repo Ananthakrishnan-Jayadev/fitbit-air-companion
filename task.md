@@ -165,15 +165,24 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done
 ---
 
 ## Phase 6: UI refresh (design.md)
-- [ ] Add `motion` dependency (`package.json`; you run `npm --prefix frontend install`)
-- [ ] Theme: Light / Dark / System toggle; Tailwind `class` dark mode; chart tokens follow it
-- [ ] Motion system: tokens, `MotionConfig reducedMotion="user"`, page fade-in, card stagger
-- [ ] Today hero: count-up recovery, status glow + label, coach verdict, "Ask why", 7-day strip
-- [ ] "Ask about this" links (Today, Heart, Sleep, Activity) → Coach page with `?q=` prefilled
-- [ ] Coach: prefill from `?q=`, suggested follow-ups, animated messages, `aria-live`
-- [ ] ⌘K / Ctrl+K command palette; mobile bottom tab bar
-- [ ] Accessibility: skip link, focus rings, contrast check in both themes
-- [ ] Docs: project.md §2/§10, README
+- [x] Add `motion` dependency (`package.json`); **you:** `npm --prefix frontend install`
+- [x] Theme: Light / Dark / Auto toggle (Tailwind `class` dark mode, no flash on load);
+      chart tokens re-read on theme change
+- [x] Motion system (`src/motion.ts`): tokens, `MotionConfig reducedMotion="user"`, page
+      fade-in, staggered cards, animated meters, count-up numbers
+- [x] Today hero: count-up recovery, status glow + label, coach verdict, "Ask why";
+      7-day recovery strip linking to each day
+- [x] "Ask the coach" links on Today (hero, warnings), Heart, Sleep, Activity and trend
+      charts → Coach page with `?q=` prefilled (never auto-sent)
+- [x] Coach: prefill + focus from `?q=`, 3 suggested follow-ups, animated messages,
+      finished replies announced via `aria-live`
+- [x] ⌘K / Ctrl+K command palette (pages, today/yesterday, any YYYY-MM-DD, ask the coach);
+      mobile header + bottom tab bar (Today, Sleep, Activity, Coach, More)
+- [x] Accessibility: skip link, visible `:focus-visible` rings, labelled week strip,
+      palette as a proper dialog/combobox with focus return
+- [ ] **You:** install, build, lint, and review in both themes, on a narrow window, and with
+      your OS "reduce motion" setting on
+- [x] Docs: design.md, project.md §2/§10, README
 
 ## Possible next steps
 - [ ] Brief accuracy: give the model precomputed comparisons (e.g. strain vs yesterday) and

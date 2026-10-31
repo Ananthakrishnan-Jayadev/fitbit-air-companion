@@ -53,3 +53,12 @@ export function formatNumber(value: number | null | undefined, digits = 0): stri
     maximumFractionDigits: digits,
   });
 }
+
+/** Today's date in the browser's local time zone, YYYY-MM-DD. */
+export function localTodayIso(): string {
+  return new Date().toLocaleDateString("en-CA");
+}
+
+export function formatWeekday(iso: string): string {
+  return new Date(`${iso}T12:00:00`).toLocaleDateString(undefined, { weekday: "short" });
+}
