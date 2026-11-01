@@ -277,3 +277,15 @@ export interface DayRow {
   scores: Record<string, number | null>;
   metrics: Record<string, number | null>;
 }
+
+export interface BodyResponse {
+  latest_date: string | null;
+  weight_kg: number | null;
+  body_fat_pct: number | null;
+  fat_mass_kg: number | null;
+  lean_mass_kg: number | null;
+  weight_change_7d: number | null;
+  weight_change_30d: number | null;
+  body_fat_change_30d: number | null;
+  points: { date: string; weight_kg: number | null; body_fat_pct: number | null }[];
+}

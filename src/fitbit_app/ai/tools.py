@@ -34,6 +34,8 @@ METRICS: dict[str, tuple[Any, str]] = {
     "steps": (DailyMetric, "steps"),
     "active_zone_minutes": (DailyMetric, "active_zone_minutes"),
     "total_calories": (DailyMetric, "total_calories"),
+    "weight_kg": (DailyMetric, "weight_kg"),
+    "body_fat_pct": (DailyMetric, "body_fat_pct"),
 }
 
 

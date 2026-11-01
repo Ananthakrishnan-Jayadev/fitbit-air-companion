@@ -277,6 +277,25 @@ def test_renormalize_skips_types_without_raw(session: Session) -> None:
     assert renormalize(session, _spec("heart-rate")) == 0
 
 
+def test_weight_keeps_the_latest_reading_of_the_local_day(session: Session) -> None:
+    # Newest page first, like the API: the later reading must win regardless of order.
+    _store(session, "weight", [g.weight("2026-10-01T22:00:00Z", 80.4)])  # 18:00 EDT Oct 1
+    _store(session, "weight", [g.weight("2026-10-01T11:00:00Z", 79.6)])  # 07:00 EDT Oct 1
+    # 01:00 UTC Oct 2 is still Oct 1 (21:00) in EDT and is the latest reading of that day.
+    _store(session, "weight", [g.weight("2026-10-02T01:00:00Z", 80.9)])
+    row = session.get(DailyMetric, dt.date(2026, 10, 1))
+    assert row is not None
+    assert row.weight_kg == 80.9
+    assert session.get(DailyMetric, dt.date(2026, 10, 2)) is None
+
+
+def test_body_fat(session: Session) -> None:
+    _store(session, "body-fat", [g.body_fat("2026-10-01T11:00:00Z", 18.4)])
+    row = session.get(DailyMetric, dt.date(2026, 10, 1))
+    assert row is not None
+    assert row.body_fat_pct == 18.4
+
+
 def test_points_without_body_are_skipped(session: Session) -> None:
     good = g.steps("2026-10-01T12:00:00Z", "2026-10-01T12:01:00Z", 10)
     assert _store(session, "steps", [good, {"dataPointName": "x"}]) == 1

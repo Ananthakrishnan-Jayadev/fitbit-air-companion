@@ -42,6 +42,8 @@ DAY_METRICS = (
     "steps",
     "active_zone_minutes",
     "total_calories",
+    "weight_kg",
+    "body_fat_pct",
 )
 WEEK_METRICS = {
     "recovery": ("score", "recovery"),
@@ -51,6 +53,7 @@ WEEK_METRICS = {
     "hrv_rmssd_ms": ("daily", "hrv_rmssd_ms"),
     "sleep_min": ("daily", "sleep_min"),
     "steps": ("daily", "steps"),
+    "weight_kg": ("daily", "weight_kg"),
 }
 
 

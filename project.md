@@ -349,6 +349,7 @@ GET  /api/heart?date&points               HR series (LTTB-downsampled), RHR, HRV
 GET  /api/sleep?date | /api/sleep/range?start&end
 GET  /api/activity?date                   hourly steps/calories, levels, stress timeline, workouts
 GET  /api/exercise?start&end
+GET  /api/body?days                      weigh-ins, latest weight/body fat, changes, fat/lean mass
 GET  /api/journal?start&end | PUT/DELETE /api/journal/{date} | GET /api/journal/tags
 GET  /api/correlations?outcome&days&end   tag effects with 95% CI
 GET  /api/ai/status | GET /api/ai/insights?date
@@ -369,6 +370,7 @@ Intraday series are `[epoch_ms, value]` pairs. Day-level dates are local days.
 | **Heart** | Intraday HR with resting line, Google HR zones, 60-day resting HR and HRV trends |
 | **Sleep** | Hypnogram, minutes per stage, overnight SpO2 and HRV, breathing rate, skin temperature, last 14 nights |
 | **Activity** | Daily totals, steps by hour, minutes per activity level, stress timeline, workouts |
+| **Body** | Weight and body fat from a smart scale (via Health Connect → Google Health): latest values, 7/30-day change, fat/lean mass, trends |
 | **Trends** | Any metric over 30/90/180/365 days vs baseline band |
 | **Journal** | Tag chips (presets + custom) and notes per day, "What affects you" table, last 14 days |
 | **Coach** | Streaming chat with the local model (can look up history via tools) |

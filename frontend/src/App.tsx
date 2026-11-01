@@ -13,6 +13,7 @@ const PAGES: Record<string, ComponentType> = {
   "/heart": lazy(() => import("./pages/HeartPage.tsx")),
   "/sleep": lazy(() => import("./pages/SleepPage.tsx")),
   "/activity": lazy(() => import("./pages/ActivityPage.tsx")),
+  "/body": lazy(() => import("./pages/BodyPage.tsx")),
   "/trends": lazy(() => import("./pages/TrendsPage.tsx")),
   "/journal": lazy(() => import("./pages/JournalPage.tsx")),
   "/coach": lazy(() => import("./pages/CoachPage.tsx")),

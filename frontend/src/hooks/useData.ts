@@ -1,6 +1,7 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
   fetchActivity,
+  fetchBody,
   fetchDaily,
   fetchHeart,
   fetchSleep,
@@ -67,6 +68,14 @@ export function useDaily(start: string, end: string) {
   return useQuery({
     queryKey: ["daily", start, end],
     queryFn: ({ signal }) => fetchDaily(start, end, signal),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useBody(days: number) {
+  return useQuery({
+    queryKey: ["body", days],
+    queryFn: ({ signal }) => fetchBody(days, signal),
     placeholderData: keepPreviousData,
   });
 }

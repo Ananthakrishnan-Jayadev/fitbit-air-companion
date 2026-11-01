@@ -195,6 +195,9 @@ class DailyMetric(Base):
     sedentary_min: Mapped[int | None] = mapped_column(Integer)
     sleep_min: Mapped[float | None] = mapped_column(Float)
     vo2_max: Mapped[float | None] = mapped_column(Float)
+    # Latest reading of the day (e.g. a smart scale writing via Health Connect).
+    weight_kg: Mapped[float | None] = mapped_column(Float)
+    body_fat_pct: Mapped[float | None] = mapped_column(Float)
     updated_at: Mapped[dt.datetime] = mapped_column(default=utcnow, onupdate=utcnow)
 
 

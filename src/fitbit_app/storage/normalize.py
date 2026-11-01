@@ -333,6 +333,52 @@ def _exercise_zones(metrics: Point) -> dict[str, Any] | None:
 Handler = Callable[[Session, DataTypeSpec, list[Point]], None]
 
 
+def _latest_of_day(column: str, value_of: Callable[[Point], float | None]) -> Handler:
+    """Daily value = that local day's latest reading (weight, body fat).
+
+    Pages arrive newest-first, so each affected day is recomputed from all stored raw
+    readings rather than from the current page alone.
+    """
+
+    def local_day(body: Point) -> dt.date:
+        sample = body["sampleTime"]
+        return (parse_ts(sample["physicalTime"]) + parse_offset(sample.get("utcOffset"))).date()
+
+    def handler(session: Session, spec: DataTypeSpec, points: list[Point]) -> None:
+        days = {local_day(p[spec.field]) for p in points}
+        rows = session.scalars(
+            select(DataPoint.value_json).where(
+                DataPoint.data_type == spec.key,
+                DataPoint.start_ts >= start_of_day_utc(min(days) - dt.timedelta(days=1)),
+                DataPoint.start_ts < start_of_day_utc(max(days) + dt.timedelta(days=2)),
+            )
+        ).all()
+        latest: dict[dt.date, tuple[dt.datetime, float]] = {}
+        for raw in rows:
+            body = raw.get(spec.field)
+            if not isinstance(body, dict):
+                continue
+            value = value_of(body)
+            day = local_day(body)
+            if value is None or day not in days:
+                continue
+            ts = _sample_ts(body)
+            if day not in latest or ts > latest[day][0]:
+                latest[day] = (ts, value)
+        now = utcnow()
+        upsert(
+            session,
+            DailyMetric,
+            [
+                {"date": day, column: round(value, 2), "updated_at": now}
+                for day, (_, value) in latest.items()
+            ],
+            index_elements=["date"],
+        )
+
+    return handler
+
+
 def _daily(values_of: Callable[[Point], dict[str, Any]]) -> Handler:
     """Upsert the columns returned by `values_of` into the point's daily_metrics row.
 
@@ -403,6 +449,13 @@ _HANDLERS: dict[str, Handler] = {
         lambda b: {"skin_temp_delta_c": _temperature_delta(b)}
     ),
     "daily-vo2-max": _daily(lambda b: {"vo2_max": _optional_float(b.get("vo2Max"))}),
+    "weight": _latest_of_day(
+        "weight_kg",
+        lambda b: float(b["weightGrams"]) / 1000 if b.get("weightGrams") is not None else None,
+    ),
+    # TODO(verify): `bodyFat.percentage` (0-100) is from a summary of the reference page;
+    # confirm against a live reading.
+    "body-fat": _latest_of_day("body_fat_pct", lambda b: _optional_float(b.get("percentage"))),
     # Rollup value fields follow {field}_{aggregation} (verified live 2026-10-29).
     "steps:daily": _daily(lambda b: {"steps": _optional_int(b.get("countSum"))}),
     "distance:daily": _daily(

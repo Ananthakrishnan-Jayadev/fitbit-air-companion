@@ -20,7 +20,8 @@ export default function TrendChart({ metric, days, end, height = 240 }: TrendCha
   const { data } = useTrend(metric, days, end);
   const def = metricDef(metric);
   const scale = def.scale ?? 1;
-  const points = data?.points ?? [];
+  // Sparse metrics (weigh-ins) keep only days with a reading, joined by a line.
+  const points = (data?.points ?? []).filter((p) => !def.sparse || p.value !== null);
   const hasBand = points.some((p) => p.baseline);
 
   const option: EChartsOption = {
@@ -65,7 +66,7 @@ export default function TrendChart({ metric, days, end, height = 240 }: TrendCha
         itemStyle: { color: t["series-1"], borderColor: t["surface-1"], borderWidth: 2 },
         symbol: "circle",
         symbolSize: 8,
-        showSymbol: false,
+        showSymbol: Boolean(def.sparse),
       },
     ],
   };

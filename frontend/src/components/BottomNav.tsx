@@ -11,6 +11,7 @@ const PRIMARY = [
 ];
 const MORE = [
   { path: "/heart", label: "Heart" },
+  { path: "/body", label: "Body" },
   { path: "/trends", label: "Trends" },
   { path: "/journal", label: "Journal" },
   { path: "/settings", label: "Settings" },

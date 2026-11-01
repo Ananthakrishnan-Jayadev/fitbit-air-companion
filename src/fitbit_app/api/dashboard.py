@@ -11,6 +11,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from fitbit_app.analytics import baselines as baseline_stats
+from fitbit_app.analytics.body import change_since, latest, split_mass
 from fitbit_app.api.deps import get_session
 from fitbit_app.storage.models import Baseline, DailyMetric, Score
 from fitbit_app.storage.queries import DAILY_COLUMNS
@@ -37,6 +38,8 @@ TrendMetric = Literal[
     "active_calories",
     "distance_m",
     "sedentary_min",
+    "weight_kg",
+    "body_fat_pct",
 ]
 MAX_RANGE_DAYS = 400
 
@@ -69,6 +72,24 @@ class DayRow(BaseModel):
     date: dt.date
     scores: dict[str, float | None]
     metrics: dict[str, float | None]
+
+
+class BodyPoint(BaseModel):
+    date: dt.date
+    weight_kg: float | None
+    body_fat_pct: float | None
+
+
+class BodyResponse(BaseModel):
+    latest_date: dt.date | None
+    weight_kg: float | None
+    body_fat_pct: float | None
+    fat_mass_kg: float | None
+    lean_mass_kg: float | None
+    weight_change_7d: float | None
+    weight_change_30d: float | None
+    body_fat_change_30d: float | None
+    points: list[BodyPoint]
 
 
 class TrendPoint(BaseModel):
@@ -181,6 +202,44 @@ def trends(
         points=[
             TrendPoint(date=day, value=value, baseline=bands.get(day))
             for day, value in sorted(rows)
+        ],
+    )
+
+
+@router.get("/body", response_model=BodyResponse)
+def body(
+    session: SessionDep,
+    days: Annotated[int, Query(ge=7, le=MAX_RANGE_DAYS)] = 90,
+) -> BodyResponse:
+    """Weigh-ins over `days` (ending at the latest one), with latest values and changes."""
+    rows = session.execute(
+        select(DailyMetric.date, DailyMetric.weight_kg, DailyMetric.body_fat_pct)
+        .where((DailyMetric.weight_kg.is_not(None)) | (DailyMetric.body_fat_pct.is_not(None)))
+        .order_by(DailyMetric.date)
+    ).all()
+    weights = [(d, w) for d, w, _ in rows if w is not None]
+    fats = [(d, f) for d, _, f in rows if f is not None]
+    newest_weight, newest_fat = latest(weights), latest(fats)
+    last_day = max((p[0] for p in (newest_weight, newest_fat) if p), default=None)
+
+    fat_mass = lean_mass = None
+    if newest_weight and newest_fat and newest_weight[0] == newest_fat[0]:
+        fat_mass, lean_mass = split_mass(newest_weight[1], newest_fat[1])
+
+    window_start = last_day - dt.timedelta(days=days - 1) if last_day else None
+    return BodyResponse(
+        latest_date=last_day,
+        weight_kg=newest_weight[1] if newest_weight else None,
+        body_fat_pct=newest_fat[1] if newest_fat else None,
+        fat_mass_kg=fat_mass,
+        lean_mass_kg=lean_mass,
+        weight_change_7d=change_since(weights, 7),
+        weight_change_30d=change_since(weights, 30),
+        body_fat_change_30d=change_since(fats, 30),
+        points=[
+            BodyPoint(date=d, weight_kg=w, body_fat_pct=f)
+            for d, w, f in rows
+            if window_start is not None and d >= window_start
         ],
     )
 

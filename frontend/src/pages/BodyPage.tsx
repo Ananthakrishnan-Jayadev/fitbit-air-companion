@@ -1,0 +1,105 @@
+import { useState } from "react";
+import TrendChart from "../components/charts/TrendChart.tsx";
+import { LoadError, Loading } from "../components/PageState.tsx";
+import { Stagger, StaggerItem } from "../components/motion/Stagger.tsx";
+import StatTile from "../components/StatTile.tsx";
+import { formatDayLabel, formatNumber } from "../format.ts";
+import { useBody } from "../hooks/useData.ts";
+
+const RANGES = [30, 90, 180, 365];
+
+function signed(value: number | null, unit: string): string | undefined {
+  if (value === null) return undefined;
+  const sign = value > 0 ? "+" : value < 0 ? "−" : "±";
+  return `${sign}${formatNumber(Math.abs(value), 1)} ${unit}`;
+}
+
+export default function BodyPage() {
+  const [days, setDays] = useState(90);
+  const { data, error, isLoading } = useBody(days);
+
+  if (isLoading) return <Loading />;
+  if (error) return <LoadError error={error} />;
+  if (!data) return null;
+
+  if (data.latest_date === null) {
+    return (
+      <section className="max-w-4xl">
+        <h1 className="mb-4 text-2xl font-semibold tracking-tight">Body</h1>
+        <p className="rounded-lg border border-dashed border-slate-300 p-8 text-center text-sm text-slate-600 dark:border-slate-700 dark:text-slate-400">
+          No weigh-ins yet. Readings from your smart scale appear here once they reach Google
+          Health (for Renpho: via Health Connect) and the next sync runs.
+        </p>
+      </section>
+    );
+  }
+
+  const change7 = signed(data.weight_change_7d, "kg");
+  const change30 = signed(data.weight_change_30d, "kg");
+  const fatChange = signed(data.body_fat_change_30d, "pts");
+
+  return (
+    <section className="max-w-6xl">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Body</h1>
+          <p className="text-sm text-slate-500">Last weigh-in: {formatDayLabel(data.latest_date)}</p>
+        </div>
+        <div className="flex overflow-hidden rounded-md border border-slate-300 dark:border-slate-700" role="group" aria-label="Range">
+          {RANGES.map((r) => (
+            <button
+              key={r}
+              type="button"
+              aria-pressed={r === days}
+              onClick={() => setDays(r)}
+              className={`px-3 py-1 text-sm ${
+                r === days
+                  ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                  : "hover:bg-slate-100 dark:hover:bg-slate-800"
+              }`}
+            >
+              {r}d
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StaggerItem>
+          <StatTile
+            label="Weight"
+            value={formatNumber(data.weight_kg, 1)}
+            unit="kg"
+            detail={[change7 && `${change7} in 7 days`, change30 && `${change30} in 30 days`]
+              .filter(Boolean)
+              .join(" · ") || undefined}
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <StatTile
+            label="Body fat"
+            value={formatNumber(data.body_fat_pct, 1)}
+            unit="%"
+            detail={fatChange ? `${fatChange} in 30 days` : undefined}
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <StatTile label="Lean mass" value={formatNumber(data.lean_mass_kg, 1)} unit="kg" detail="Weight minus fat mass" />
+        </StaggerItem>
+        <StaggerItem>
+          <StatTile label="Fat mass" value={formatNumber(data.fat_mass_kg, 1)} unit="kg" />
+        </StaggerItem>
+      </Stagger>
+
+      <p className="mt-3 text-xs text-slate-500">
+        Weight can swing 1–2 kg day to day with water and food; watch the trend, not single readings.
+        Scale body-fat estimates are approximate and work best for tracking change over time.
+      </p>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <TrendChart metric="weight_kg" days={days} end={data.latest_date} height={280} />
+        <TrendChart metric="body_fat_pct" days={days} end={data.latest_date} height={280} />
+      </div>
+    </section>
+  );
+}

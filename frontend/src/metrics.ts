@@ -9,6 +9,8 @@ export interface MetricDef {
   minutes?: boolean;
   /** Whether a higher value is generally better (for "above/below normal" wording). */
   higherIsBetter?: boolean;
+  /** Not measured every day (e.g. weigh-ins): charts join the readings and mark each one. */
+  sparse?: boolean;
 }
 
 export const METRICS: Record<string, MetricDef> = {
@@ -28,6 +30,8 @@ export const METRICS: Record<string, MetricDef> = {
   total_calories: { label: "Calories", unit: "kcal", digits: 0 },
   active_calories: { label: "Active calories", unit: "kcal", digits: 0 },
   sedentary_min: { label: "Sedentary time", unit: "", digits: 0, minutes: true },
+  weight_kg: { label: "Weight", unit: "kg", digits: 1, sparse: true },
+  body_fat_pct: { label: "Body fat", unit: "%", digits: 1, sparse: true },
 };
 
 export const TREND_METRICS = Object.keys(METRICS);

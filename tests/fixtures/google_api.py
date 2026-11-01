@@ -58,6 +58,23 @@ def spo2(ts: str, pct: float) -> Point:
     }
 
 
+def weight(ts: str, kg: float, offset: str = EDT) -> Point:
+    return {
+        "dataPointName": _name("weight", f"w-{ts}"),
+        "weight": {
+            "sampleTime": {"physicalTime": ts, "utcOffset": offset},
+            "weightGrams": kg * 1000,
+        },
+    }
+
+
+def body_fat(ts: str, pct: float, offset: str = EDT) -> Point:
+    return {
+        "dataPointName": _name("body-fat", f"bf-{ts}"),
+        "bodyFat": {"sampleTime": {"physicalTime": ts, "utcOffset": offset}, "percentage": pct},
+    }
+
+
 def steps(start: str, end: str, count: int) -> Point:
     return {
         "dataPointName": _name("steps", f"steps-{start}"),

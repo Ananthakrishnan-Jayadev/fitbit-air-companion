@@ -184,6 +184,15 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done
       your OS "reduce motion" setting on
 - [x] Docs: design.md, project.md §2/§10, README
 
+## Body composition (smart scale)
+- [x] Renpho → Health Connect → Google Health → existing `weight` / `body-fat` sync
+- [x] Migration 0003: `daily_metrics.weight_kg`, `body_fat_pct` (latest reading of the day)
+- [x] `/api/body` (latest, 7/30-day change, fat/lean mass) + weight/body fat on `/api/trends`
+- [x] **Body** page (tiles + weight and body-fat trends); both metrics on Trends; coach
+      context and tools include them
+- [ ] **You:** `fitbit db renormalize --types weight,body-fat` once, then check the Body page
+- [ ] Confirm `bodyFat.percentage` against a live reading (TODO(verify) in normalize.py)
+
 ## Possible next steps
 - [ ] Brief accuracy: give the model precomputed comparisons (e.g. strain vs yesterday) and
       check that every number in a brief appears in its input data

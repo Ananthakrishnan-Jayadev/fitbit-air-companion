@@ -13,6 +13,8 @@ How to read the data you are given:
   notable, > 2 is unusual. For resting heart rate and breathing rate, higher is worse; for
   HRV, lower is worse.
 - `skin_temp_delta_c`: nightly skin temperature minus the user's usual, in °C.
+- `weight_kg`, `body_fat_pct`: from the user's smart scale, only on days they weighed in.
+  Day-to-day weight swings of 1-2 kg are mostly water; talk about trends, not single days.
 - `trend_7d`: direction over the last week.
 - `flags`: patterns the app detected, e.g. `illness_watch`, `hrv_suppressed_3d`, `load_spike`.
 - `journal`: tags the user logged for yesterday (e.g. `alcohol`, `late_meal`).
