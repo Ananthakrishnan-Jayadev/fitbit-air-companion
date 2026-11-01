@@ -71,6 +71,24 @@ Then run `fitbit serve` and use **Settings → Connect Google**.
 Logs: console, plus `data/logs/fitbit.log` (rotated at 5 MB, 3 kept). Logs never contain
 health values or tokens.
 
+## Run 24/7 on a spare machine
+
+To keep syncing while your main machine is off, run the app on an always-on spare laptop
+over [Tailscale](https://tailscale.com) and keep Ollama on your main machine:
+
+- **Spare laptop:** `fitbit serve` (sync, scoring, database, UI). Started at boot by a
+  systemd user service.
+- **Main machine:** Ollama. The spare laptop reaches it via `OLLAMA_HOST=http://<tailscale-ip>:11434`,
+  with Ollama's port allowed only over Tailscale.
+- **Access:** SSH tunnel (`ssh -N -L 8000:127.0.0.1:8000 spare-laptop`), or from your phone
+  over Tailscale with a firewall. Reconnect Google through the tunnel so the
+  `127.0.0.1` redirect still matches.
+- **When the main machine is off:** sync, scores and charts keep working. AI pauses until
+  Ollama is back.
+
+No code changes are needed. Full plan, step by step: [home-server.md](home-server.md). It also
+explains why a serverless host such as Vercel (with Supabase) is a poor fit.
+
 ## Tests
 
 ```bash
