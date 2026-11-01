@@ -49,9 +49,7 @@ def tag_effects(
     """
     lag = dt.timedelta(days=lag_days)
     logged = {
-        day: set(tags)
-        for day, tags in tags_by_day.items()
-        if outcomes.get(day + lag) is not None
+        day: set(tags) for day, tags in tags_by_day.items() if outcomes.get(day + lag) is not None
     }
     rng = np.random.default_rng(seed)
     effects = []
