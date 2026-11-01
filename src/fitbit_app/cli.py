@@ -13,6 +13,7 @@ from typing import Annotated
 
 import typer
 import uvicorn
+from sqlalchemy import delete
 
 from fitbit_app.ai.context import latest_scored_day
 from fitbit_app.ai.service import KINDS, AIService
@@ -28,6 +29,7 @@ from fitbit_app.main import create_app
 from fitbit_app.scoring import ScoreService
 from fitbit_app.storage.db import create_db_engine, create_session_factory
 from fitbit_app.storage.export import backup_database, write_export
+from fitbit_app.storage.models import SyncState
 from fitbit_app.storage.migrate import upgrade_to_head
 from fitbit_app.storage.normalize import renormalize
 
@@ -195,12 +197,23 @@ def sync(
     types: Annotated[
         str | None, typer.Option(help="Comma-separated data types, e.g. heart-rate,sleep")
     ] = None,
+    reset: Annotated[
+        bool,
+        typer.Option(
+            "--reset", help="Forget sync progress for --types and fetch them again from scratch"
+        ),
+    ] = False,
 ) -> None:
     """Sync data from the Google Health API now (the server also syncs on a schedule)."""
     settings = get_settings()
     configure_logging(settings.log_level, settings.log_dir)
     keys = [t.strip() for t in types.split(",") if t.strip()] if types else None
+    if reset and not keys:
+        typer.secho("--reset needs --types (e.g. --types weight,body-fat)", fg=typer.colors.RED)
+        raise typer.Exit(1)
     try:
+        if reset:
+            _reset_sync_state(settings, keys or [])
         report = asyncio.run(_run_sync(settings, keys, since.date() if since else None))
     except (FitbitAppError, ValueError) as exc:
         typer.secho(str(exc), fg=typer.colors.RED, err=True)
@@ -212,6 +225,20 @@ def sync(
         typer.secho(f"  failed {key}: {message}", fg=typer.colors.RED)
     if report.failed:
         raise typer.Exit(1)
+
+
+def _reset_sync_state(settings: Settings, keys: list[str]) -> None:
+    """Drop the stored sync range of `keys` so the next sync backfills them again."""
+    select_specs(include_beta=settings.enable_beta_types, keys=keys)  # validate names
+    engine = create_db_engine(settings.db_path)
+    try:
+        upgrade_to_head(engine)
+        with create_session_factory(engine)() as session:
+            session.execute(delete(SyncState).where(SyncState.data_type.in_(keys)))
+            session.commit()
+    finally:
+        engine.dispose()
+    typer.echo(f"Reset sync progress for: {', '.join(keys)}")
 
 
 async def _run_sync(

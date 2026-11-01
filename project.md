@@ -189,7 +189,8 @@ stress. BMI and BMR also need to be derived client-side.
 - **Polling, not webhooks.** Webhooks need a public HTTPS URL, which a localhost app doesn't
   have. Could be added later behind a tunnel; out of scope.
 - **Sources** (`dataSourceFamily`): sensor data from `google-wearables` (trackers only);
-  manual logs (`weight`, `body-fat`) from `google-sources`.
+  `weight` / `body-fat` from `all-sources` (smart scales writing via Health Connect are not
+  in `google-sources` in practice).
 - `sync_state` tracks the synced range `[synced_from, cursor)` per type. Each run does an
   incremental window `[cursor − overlap, now)` (overlap 2 h for samples/intervals, 3 days for
   sessions/daily, which Google revises), then continues any unfinished backfill down to

@@ -38,7 +38,8 @@ class Method(StrEnum):
 
 class Family(StrEnum):
     WEARABLES = "google-wearables"  # Google/Fitbit trackers, no manual logs
-    GOOGLE = "google-sources"  # also manual logs and Health Connect
+    GOOGLE = "google-sources"  # also manual logs and (per the docs) Health Connect
+    ALL = "all-sources"  # everything, incl. third-party apps such as smart scales
 
 
 @dataclass(frozen=True)
@@ -85,8 +86,10 @@ REGISTRY: tuple[DataTypeSpec, ...] = (
     DataTypeSpec("respiratory-rate-sleep-summary", "respiratoryRateSleepSummary", _S, _HM),
     DataTypeSpec("vo2-max", "vo2Max", _S, _AF, chunk_days=30),
     DataTypeSpec("run-vo2-max", "runVo2Max", _S, _AF, chunk_days=30),
-    DataTypeSpec("weight", "weight", _S, _HM, family=Family.GOOGLE, chunk_days=30),
-    DataTypeSpec("body-fat", "bodyFat", _S, _HM, family=Family.GOOGLE, chunk_days=30),
+    # Smart scales (e.g. Renpho via Health Connect) don't appear under google-sources in
+    # practice (observed 2026-11-01), so body composition reads all sources.
+    DataTypeSpec("weight", "weight", _S, _HM, family=Family.ALL, chunk_days=30),
+    DataTypeSpec("body-fat", "bodyFat", _S, _HM, family=Family.ALL, chunk_days=30),
     # Intervals
     DataTypeSpec("steps", "steps", _I, _AF),
     DataTypeSpec("distance", "distance", _I, _AF),

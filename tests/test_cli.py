@@ -1,3 +1,5 @@
+import datetime as dt
+
 import pytest
 from typer.testing import CliRunner
 
@@ -5,8 +7,9 @@ from fitbit_app import cli as cli_module
 from fitbit_app import devserver
 from fitbit_app.ai.status import OllamaStatus
 from fitbit_app.config import Settings
-from fitbit_app.storage.db import create_db_engine
-from fitbit_app.storage.migrate import current_revision, head_revision
+from fitbit_app.storage.db import create_db_engine, create_session_factory
+from fitbit_app.storage.migrate import current_revision, head_revision, upgrade_to_head
+from fitbit_app.storage.models import SyncState
 
 runner = CliRunner()
 
@@ -82,6 +85,30 @@ def test_sync_without_connection_fails_cleanly() -> None:
     result = runner.invoke(cli_module.app, ["sync"])
     assert result.exit_code == 1
     assert "No Google account connected" in result.output
+
+
+def test_sync_reset_clears_progress_for_selected_types(settings: Settings) -> None:
+    engine = create_db_engine(settings.db_path)
+    upgrade_to_head(engine)
+    stamp = dt.datetime(2026, 10, 1, tzinfo=dt.UTC)
+    with create_session_factory(engine)() as session:
+        for key in ("weight", "body-fat", "steps"):
+            session.add(SyncState(data_type=key, cursor=stamp, synced_from=stamp))
+        session.commit()
+
+    # The sync itself then fails (not connected), but the reset has already happened.
+    result = runner.invoke(cli_module.app, ["sync", "--types", "weight,body-fat", "--reset"])
+    assert "Reset sync progress for: weight, body-fat" in result.output
+    with create_session_factory(engine)() as session:
+        remaining = {s.data_type for s in session.query(SyncState).all()}
+    engine.dispose()
+    assert remaining == {"steps"}
+
+
+def test_sync_reset_requires_types() -> None:
+    result = runner.invoke(cli_module.app, ["sync", "--reset"])
+    assert result.exit_code == 1
+    assert "--reset needs --types" in result.output
 
 
 def test_sync_rejects_unknown_types() -> None:

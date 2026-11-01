@@ -58,6 +58,7 @@ Then run `fitbit serve` and use **Settings → Connect Google**.
 ```bash
 .venv/bin/fitbit doctor                      # check config, DB, Google, data freshness, UI, Ollama
 .venv/bin/fitbit sync [--since YYYY-MM-DD]   # sync now / backfill further back
+.venv/bin/fitbit sync --types T --reset     # forget progress for T and re-fetch it
 .venv/bin/fitbit analyze [--all | --date D]  # recompute scores
 .venv/bin/fitbit brief [--kind K] [--force]  # write an AI brief / weekly_review / anomaly note
 .venv/bin/fitbit export [--intraday]         # ZIP of CSV files (never includes credentials)
