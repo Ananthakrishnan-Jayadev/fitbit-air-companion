@@ -2,7 +2,7 @@ import datetime as dt
 import statistics
 
 import pytest
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from fitbit_app.scoring import RECENT_DAYS, ScoreService
@@ -113,6 +113,19 @@ def test_rerun_is_idempotent(service: ScoreService, seeded: sessionmaker[Session
 def test_after_sync_rescoring(service: ScoreService) -> None:
     assert service.recompute_after_sync() == DAYS  # nothing scored yet -> everything
     assert service.recompute_after_sync() == RECENT_DAYS
+
+
+def test_after_sync_fills_unscored_gaps(
+    service: ScoreService, seeded: sessionmaker[Session]
+) -> None:
+    service.recompute_all()
+    gap = [START + dt.timedelta(days=i) for i in range(5, 10)]
+    with seeded() as session:
+        session.execute(delete(Score).where(Score.date.in_(gap)))
+        session.commit()
+
+    assert service.recompute_after_sync() == RECENT_DAYS + len(gap)
+    assert set(gap) <= set(_scores(seeded))
 
 
 def test_empty_database(session_factory: sessionmaker[Session]) -> None:

@@ -259,7 +259,7 @@ no I/O.
 | `features.py` | Feature pack for the LLM | See §8.2 |
 
 `scoring.py` (ScoreService) runs these per local day, oldest first, after every sync (all
-days on the first run, then the last 4) and via `fitbit analyze`. A local day is defined by
+days on the first run, then the last 4 plus any day with data but no score yet) and via `fitbit analyze`. A local day is defined by
 that day's wake-up UTC offset (`daily_metrics.tz_offset_min`), so DST and travel are handled.
 
 Scores are recomputed for affected dates after each sync (sleep revisions shift past days).

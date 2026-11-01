@@ -105,10 +105,15 @@ class ScoreService:
         self._clock = clock
 
     def recompute_after_sync(self) -> int:
-        """Everything on the first run, otherwise the last few days."""
+        """Everything on the first run; afterwards the last few days (Google revises them)
+        plus any day with data but no score yet, e.g. a gap while the app was closed."""
+        available = self._data_days()
         with self._session_factory() as session:
-            has_scores = bool(session.scalar(select(func.count()).select_from(Score)))
-        return self.recompute_recent() if has_scores else self.recompute_all()
+            scored = set(session.scalars(select(Score.date)).all())
+        if not scored:
+            return self.recompute(available)
+        unscored = [day for day in available if day not in scored]
+        return self.recompute([*available[-RECENT_DAYS:], *unscored])
 
     def recompute_all(self) -> int:
         return self.recompute(self._data_days())
