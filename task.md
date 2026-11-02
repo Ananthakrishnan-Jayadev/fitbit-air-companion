@@ -193,6 +193,12 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done
 - [ ] **You:** `fitbit db renormalize --types weight,body-fat` once, then check the Body page
 - [ ] Confirm `bodyFat.percentage` against a live reading (TODO(verify) in normalize.py)
 
+## Storage size
+- [x] Migration 0004: `hr_samples`, `hrv_samples`, `spo2_samples`, `activity_minutes` rebuilt
+      as `WITHOUT ROWID` (one copy per row instead of table + primary-key index); no data change
+- [ ] **You:** `fitbit db backup`, stop the server, `fitbit db upgrade`, then
+      `sqlite3 data/fitbit.db 'VACUUM;'` to return the freed space to the disk
+
 ## Possible next steps
 - [ ] Brief accuracy: give the model precomputed comparisons (e.g. strain vs yesterday) and
       check that every number in a brief appears in its input data

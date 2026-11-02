@@ -68,6 +68,10 @@ Then run `fitbit serve` and use **Settings → Connect Google**.
 .venv/bin/fitbit build-ui                    # rebuild the frontend into the Python package
 ```
 
+Storage grows about 1 GB a year (mostly 1-second heart rate). Migrations reuse freed space
+inside the file; to shrink the file itself, stop the server and run
+`sqlite3 data/fitbit.db 'VACUUM;'` (needs free disk about the size of the database).
+
 Logs: console, plus `data/logs/fitbit.log` (rotated at 5 MB, 3 kept). Logs never contain
 health values or tokens.
 

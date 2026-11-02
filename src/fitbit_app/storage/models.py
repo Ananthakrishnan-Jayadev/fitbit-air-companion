@@ -92,10 +92,14 @@ class DataPoint(Base):
 
 
 # --- Typed intraday series ---------------------------------------------------------------
+# Keyed by timestamp: WITHOUT ROWID stores each row once, clustered by `ts`, instead of a
+# rowid table plus a primary-key index holding a second copy (migration 0004).
+_WITHOUT_ROWID: dict[str, Any] = {"sqlite_with_rowid": False}
 
 
 class HrSample(Base):
     __tablename__ = "hr_samples"
+    __table_args__ = _WITHOUT_ROWID
 
     ts: Mapped[dt.datetime] = mapped_column(primary_key=True)
     bpm: Mapped[int] = mapped_column(Integer)
@@ -105,6 +109,7 @@ class HrSample(Base):
 
 class HrvSample(Base):
     __tablename__ = "hrv_samples"
+    __table_args__ = _WITHOUT_ROWID
 
     ts: Mapped[dt.datetime] = mapped_column(primary_key=True)
     rmssd_ms: Mapped[float] = mapped_column(Float)
@@ -112,6 +117,7 @@ class HrvSample(Base):
 
 class Spo2Sample(Base):
     __tablename__ = "spo2_samples"
+    __table_args__ = _WITHOUT_ROWID
 
     ts: Mapped[dt.datetime] = mapped_column(primary_key=True)
     spo2_pct: Mapped[float] = mapped_column(Float)
@@ -119,6 +125,7 @@ class Spo2Sample(Base):
 
 class ActivityMinute(Base):
     __tablename__ = "activity_minutes"
+    __table_args__ = _WITHOUT_ROWID
 
     ts: Mapped[dt.datetime] = mapped_column(primary_key=True)
     steps: Mapped[int | None] = mapped_column(Integer)

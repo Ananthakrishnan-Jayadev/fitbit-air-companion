@@ -235,6 +235,10 @@ stress. BMI and BMR also need to be derived client-side.
 | `ai_insights` | Generated briefs/tips: date, kind, model, prompt_hash, content_json, created_at |
 | `chat_messages` | Coach conversation history |
 
+The four intraday tables are `WITHOUT ROWID` (migration 0004): keyed by timestamp, so each
+row is stored once, clustered by `ts`, instead of a rowid table plus a primary-key index
+holding a second copy. Storage grows roughly linearly, about 1 GB a year at 1 s heart rate.
+
 Raw → typed transformation happens in `storage/normalize.py`, so re-normalizing never needs
 a re-download.
 
