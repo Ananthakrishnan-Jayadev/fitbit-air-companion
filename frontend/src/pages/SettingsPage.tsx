@@ -2,6 +2,7 @@ import { useSearchParams } from "react-router-dom";
 import DataCard from "../components/settings/DataCard.tsx";
 import GoogleConnectionCard from "../components/settings/GoogleConnectionCard.tsx";
 import ProfileCard from "../components/settings/ProfileCard.tsx";
+import SessionCard from "../components/settings/SessionCard.tsx";
 import SyncCard from "../components/settings/SyncCard.tsx";
 import SystemStatusCard from "../components/settings/SystemStatusCard.tsx";
 
@@ -49,6 +50,7 @@ export default function SettingsPage() {
         <ProfileCard />
         <DataCard />
         <SystemStatusCard />
+        <SessionCard />
       </div>
     </section>
   );

@@ -13,9 +13,21 @@ from fastapi.responses import FileResponse, HTMLResponse, Response
 
 from fitbit_app import __version__
 from fitbit_app.ai.service import AIService
-from fitbit_app.api import ai, auth, dashboard, details, export, health, journal, profile, sync
+from fitbit_app.api import (
+    ai,
+    auth,
+    dashboard,
+    details,
+    export,
+    health,
+    journal,
+    profile,
+    session,
+    sync,
+)
 from fitbit_app.config import Settings, get_settings
 from fitbit_app.ingest.service import SyncService
+from fitbit_app.login import LoginRequiredMiddleware, LoginThrottle
 from fitbit_app.scheduler import create_scheduler
 from fitbit_app.scoring import ScoreService
 from fitbit_app.storage.db import create_db_engine, create_session_factory
@@ -74,7 +86,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(title="Fitbit Air Companion", version=__version__, lifespan=lifespan)
     app.state.settings = settings
-    for module in (health, auth, sync, profile, dashboard, details, ai, journal, export):
+    app.state.login_throttle = LoginThrottle()
+    if settings.login_required:
+        app.add_middleware(LoginRequiredMiddleware, settings=settings)
+    elif settings.listens_beyond_loopback:
+        logger.warning(
+            "Listening on %s without a login: anyone who can reach this port sees your data. "
+            "Set APP_PASSWORD in .env.",
+            settings.host,
+        )
+    for module in (health, session, auth, sync, profile, dashboard, details, ai, journal, export):
         app.include_router(module.router, prefix="/api")
     _mount_frontend(app, settings.static_dir)
     return app

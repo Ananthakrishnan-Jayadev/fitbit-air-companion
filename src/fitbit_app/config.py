@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     port: int = 8000
     log_level: str = "INFO"
     data_dir: Path = Path("data")
+    # Login for the web UI/API. Empty = no login (fine when only 127.0.0.1 can reach the app).
+    app_password: SecretStr = SecretStr("")
+    session_days: int = 30
     static_dir: Path = PACKAGE_DIR / "static"
     # Editable (src-layout) install: repo_root/src/fitbit_app -> repo_root/frontend
     frontend_dir: Path = PACKAGE_DIR.parents[1] / "frontend"
@@ -64,6 +67,14 @@ class Settings(BaseSettings):
     @property
     def google_configured(self) -> bool:
         return bool(self.google_client_id and self.google_client_secret.get_secret_value())
+
+    @property
+    def login_required(self) -> bool:
+        return bool(self.app_password.get_secret_value())
+
+    @property
+    def listens_beyond_loopback(self) -> bool:
+        return self.host not in {"127.0.0.1", "localhost", "::1"}
 
     @property
     def secret_key_configured(self) -> bool:

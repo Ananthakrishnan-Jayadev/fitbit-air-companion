@@ -2,7 +2,8 @@
 
 The app runs as a Docker container on an always-on home server (an old laptop), so data keeps
 syncing while your main machine is off. Ollama stays on the main machine, which has the GPU.
-You reach the app from the main machine through SSH.
+At home, any of your devices can open it at `http://<server-ip>:8000` behind a password
+(`APP_PASSWORD`); Google reconnects go through an SSH tunnel.
 
 ## Why not a cloud host (Vercel + Supabase)?
 
@@ -14,7 +15,7 @@ that model:
 | Background sync (every 15 min / hourly) | Serverless functions only run per request; nothing runs in between. |
 | Backfill / long syncs | The first sync takes minutes and exceeds function time limits. |
 | Local AI (Ollama) | Vercel can't reach Ollama on your machine; a hosted LLM would send health data to a third party. |
-| No login | The app has no authentication because it only listens locally. A public URL would expose your health data and your Google connection. |
+| Minimal login | One shared password, plain HTTP, meant for a home network. Not hardened for the public internet, where it would guard your health data and your Google connection. |
 | SQLite-specific code | Upserts, pragmas, file permissions and backups are SQLite-specific and would need porting to Postgres. |
 
 It would also break the project rule that health data goes nowhere except Google and the
@@ -34,7 +35,7 @@ local Ollama instance (CLAUDE.md §6).
 
 | Machine | Runs | Notes |
 |---|---|---|
-| Home server | `fitbit` container: sync, scoring, database, UI | ~300–600 MB RAM; port published on its loopback only |
+| Home server | `fitbit` container: sync, scoring, database, UI | ~300–600 MB RAM; port on loopback + LAN IP, password required |
 | Main machine | Ollama with `qwen3.5:9b` | Needs ~6–7 GB free RAM/VRAM for the model |
 
 **When the main machine is off:** sync, scores and charts keep working. The AI brief and
@@ -167,6 +168,41 @@ Host fitbit-server
 
 `ssh -N fitbit-server` then opens the tunnel.
 
+### 7b. Open it from any device at home (with a password)
+
+1. Pick a strong password and add it to the server's `.env`:
+
+   ```bash
+   APP_PASSWORD=<long random passphrase>
+   # SESSION_DAYS=30   # how long each device stays signed in
+   ```
+
+2. In `compose.yaml`, uncomment the LAN line and put in the server's LAN IP
+   (`hostname -I` on the server shows it):
+
+   ```yaml
+       ports:
+         - "127.0.0.1:${FITBIT_PORT:-8000}:8000"
+         - "192.168.1.50:${FITBIT_PORT:-8000}:8000"
+   ```
+
+3. Apply: `docker compose up -d`. Then `docker compose exec fitbit fitbit doctor` should show
+   **Login: OK**.
+4. On your phone or laptop (on the home Wi-Fi), open `http://192.168.1.50:8000` and sign in.
+   Add it to the home screen for an app-like shortcut.
+
+Notes:
+
+- **Home network only:** the LAN IP isn't reachable from outside unless you forward the port
+  on your router, so don't. Give the server a fixed IP with a DHCP reservation.
+- **Google reconnect still uses the tunnel (step 7).** Google only redirects to
+  `127.0.0.1`, and a private IP like `192.168.1.50` isn't accepted as a redirect.
+- **Sign out:** Settings → App login → Sign out. Changing `APP_PASSWORD` (and
+  `docker compose up -d`) signs out every device.
+- **Plain HTTP:** the password and data cross your Wi-Fi unencrypted. That's acceptable on a
+  trusted home network with WPA2/3; avoid guest or shared networks.
+- Five wrong passwords lock the login for a minute.
+
 ### 8. Everyday commands (on the server, in `~/server/fitbit`)
 
 | Task | Command |
@@ -196,18 +232,19 @@ Delete old backups on the server now and then; each is a full copy of the databa
 
 ## Security checklist
 
-- [ ] Port published as `127.0.0.1:8000:8000`, never `8000:8000`. Docker bypasses ufw, so a
-      bare port mapping would expose the app, which has no login, to your whole network.
+- [ ] Ports published only on `127.0.0.1` and the server's LAN IP, never a bare `8000:8000`.
+      Docker bypasses ufw, so a bare mapping opens the port on every interface.
+- [ ] `APP_PASSWORD` set before the LAN line is enabled (`doctor` → Login: OK).
 - [ ] No router port forwarding for 8000 or 11434.
 - [ ] Ollama port allowed only from the server (or only over Tailscale).
 - [ ] `.env` and `data/*.db` are `chmod 600` on the server.
 - [ ] Server disk encrypted if possible (it holds your health data).
 - [ ] Only one copy of the app running.
 
-## Optional: open it from your phone
+## Optional: away from home (Tailscale)
 
-Phones can't easily hold an SSH tunnel. With Tailscale on the server and the phone, change
-the port line in `compose.yaml` to the server's Tailscale IP:
+Step 7b covers your phone at home. To also reach it away from home, put Tailscale on the
+server and the phone and add a port line for the server's Tailscale IP (keep `APP_PASSWORD`):
 
 ```yaml
       - "<server-tailscale-ip>:8000:8000"

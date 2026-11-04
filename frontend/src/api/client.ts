@@ -10,6 +10,11 @@ export class ApiError extends Error {
   }
 }
 
+/** The API answered 401: no valid login session (only when APP_PASSWORD is set). */
+export function isUnauthorized(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 401;
+}
+
 async function request<T>(method: string, path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
   const response = await fetch(`/api${path}`, {
     method,

@@ -289,3 +289,9 @@ export interface BodyResponse {
   body_fat_change_30d: number | null;
   points: { date: string; weight_kg: number | null; body_fat_pct: number | null }[];
 }
+
+// Web UI login (APP_PASSWORD). `required` is false when no password is configured.
+export interface SessionStatus {
+  required: boolean;
+  authenticated: boolean;
+}

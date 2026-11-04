@@ -90,7 +90,8 @@ ssh -N -L 8000:127.0.0.1:8000 server
 ```
 
 - **Server:** the `fitbit` container (sync, scoring, database, UI), restarted automatically.
-  The port is published on the server's `127.0.0.1` only; the app has no login.
+  Published on the server's `127.0.0.1` (SSH tunnel) and, optionally, its LAN IP for phones
+  and other devices at home. Set `APP_PASSWORD` in `.env` first: the UI then asks for it.
 - **Main machine:** Ollama. Set `OLLAMA_HOST=http://<main-machine-ip>:11434` in the server's
   `.env` and allow port 11434 only from the server.
 - **Google reconnect** works through the tunnel, because the browser stays on `127.0.0.1:8000`.
@@ -108,6 +109,9 @@ npm --prefix frontend run lint
 ```
 
 ## Troubleshooting
+- **Forgot the app password / want to sign out everywhere**: change `APP_PASSWORD` in `.env`
+  and restart (`docker compose up -d` on the server). Every device must sign in again.
+- **"Too many wrong passwords"**: wait a minute; five failures lock the login briefly.
 - **"UI not built" page**: run `.venv/bin/fitbit build-ui`.
 - **`serve --dev` says node_modules is missing**: run `npm --prefix frontend install`.
 - **`redirect_uri_mismatch` when connecting Google**: the OAuth client's Authorized redirect

@@ -40,6 +40,7 @@ async def run_checks(settings: Settings) -> list[CheckResult]:
         _check_env_file(),
         _check_google(settings),
         _check_secret_key(settings),
+        _check_login(settings),
         await asyncio.to_thread(_check_database, settings),
         await asyncio.to_thread(_check_google_connection, settings),
         await asyncio.to_thread(_check_freshness, settings),
@@ -68,6 +69,19 @@ def _check_secret_key(settings: Settings) -> CheckResult:
     return CheckResult(
         "Secret key", Level.WARN, "FITBIT_SECRET_KEY not set; needed to store Google tokens"
     )
+
+
+def _check_login(settings: Settings) -> CheckResult:
+    if settings.login_required:
+        return CheckResult("Login", Level.OK, "APP_PASSWORD set; the web UI asks for it")
+    if settings.listens_beyond_loopback:
+        return CheckResult(
+            "Login",
+            Level.WARN,
+            f"No APP_PASSWORD while listening on {settings.host}: anyone who can reach the "
+            "port sees your data (fine only if the port is published on 127.0.0.1)",
+        )
+    return CheckResult("Login", Level.OK, "Not needed: only reachable from this machine")
 
 
 def _check_database(settings: Settings) -> CheckResult:

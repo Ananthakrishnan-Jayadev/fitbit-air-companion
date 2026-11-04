@@ -3,7 +3,9 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout.tsx";
 import { Loading } from "./components/PageState.tsx";
 import PlaceholderPage from "./components/PlaceholderPage.tsx";
+import { useSession } from "./hooks/useSession.ts";
 import { NAV_ITEMS } from "./navigation.ts";
+import LoginPage from "./pages/LoginPage.tsx";
 import SettingsPage from "./pages/SettingsPage.tsx";
 import TodayPage from "./pages/TodayPage.tsx";
 
@@ -21,6 +23,11 @@ const PAGES: Record<string, ComponentType> = {
 };
 
 export default function App() {
+  const session = useSession();
+  // If the session check itself fails (server down), fall through: the pages show the error.
+  if (session.isPending) return <Loading />;
+  if (session.data?.required && !session.data.authenticated) return <LoginPage />;
+
   return (
     <Routes>
       <Route element={<Layout />}>

@@ -351,6 +351,7 @@ holds up syncing.
 
 ```
 GET  /api/health                          app + db + ollama + google status
+GET  /api/session | POST /api/session/login | POST /api/session/logout   (app login, APP_PASSWORD)
 GET  /api/auth/login | /api/auth/callback | /api/auth/status | POST /api/auth/logout
 GET/PUT /api/profile                      age, max HR, sleep need
 POST /api/sync            {types?, since?} trigger sync (background); GET /api/sync/status
@@ -386,7 +387,8 @@ Intraday series are `[epoch_ms, value]` pairs. Day-level dates are local days.
 | **Trends** | Any metric over 30/90/180/365 days vs baseline band |
 | **Journal** | Tag chips (presets + custom) and notes per day, "What affects you" table, last 14 days |
 | **Coach** | Streaming chat with the local model (can look up history via tools) |
-| **Settings** | Google connection, per-type sync status + backfill, profile, data download, system status |
+| **Settings** | Google connection, per-type sync status + backfill, profile, data download, system status, app sign-out (when a password is set) |
+| **Login** | Password form shown instead of the app when `APP_PASSWORD` is set and the browser has no session |
 
 App shell (Phase 6, see design.md): Light / Dark / Auto theme toggle, ⌘K command palette,
 skip link and focus rings, mobile header + bottom tab bar, and Motion animations (page fade,
@@ -448,7 +450,15 @@ ollama pull qwen3.5:9b            # if not already present
 
 ## 13. Security and privacy
 - Binds to `127.0.0.1` by default. `--host 0.0.0.0` only when you choose to (e.g. over
-  Tailscale).
+  Tailscale or the home network).
+- **Optional login** (`APP_PASSWORD`, `fitbit_app/login.py`): required whenever the app is
+  reachable from other devices. One password; a successful login sets an HttpOnly,
+  SameSite=Lax cookie holding an HMAC-signed issue time (valid `SESSION_DAYS`, default 30).
+  The key is derived from `FITBIT_SECRET_KEY` and the password, so changing the password signs
+  out every device. All `/api` routes need the cookie except `/api/health` and
+  `/api/session*`; the built UI files are public and show the login form on 401. At most 5
+  wrong passwords per minute. With no password and a non-loopback host, `serve` logs a
+  warning and `doctor` warns.
 - `.env`, `data/` (DB, logs, backups) and tokens are gitignored. The DB, backups and CLI
   exports are created with permissions `0600`; the refresh token is Fernet-encrypted.
 - Logs never contain health values or tokens; OAuth `code`/`state` are redacted from access logs.

@@ -20,9 +20,12 @@ services:
     volumes:
       - ./data:/app/data
     ports:
-      # Host loopback only. Docker bypasses ufw, so never publish as "8000:8000" (that opens
-      # the app, which has no login, to the whole network). Reach it with an SSH tunnel.
+      # Loopback: for the SSH tunnel (needed for Google reconnects, which must use 127.0.0.1).
       - "127.0.0.1:${FITBIT_PORT:-8000}:8000"
+      # Home network: uncomment with the server's LAN IP, and set APP_PASSWORD in .env first.
+      # Never use a bare "8000:8000": Docker bypasses ufw, and 0.0.0.0 also covers every
+      # other interface (VPNs, Docker networks).
+      # - "192.168.1.50:${FITBIT_PORT:-8000}:8000"
     logging:
       driver: json-file
       options:

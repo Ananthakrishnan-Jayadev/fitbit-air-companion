@@ -199,6 +199,15 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done
 - [x] **You:** `fitbit db backup`, stop the server, `fitbit db upgrade`, then
       `sqlite3 data/fitbit.db 'VACUUM;'` to return the freed space to the disk (done: 682 MB → 373 MB)
 
+## Home server (Docker) and app login
+- [x] `Dockerfile` (Node UI stage + slim Python, non-root), `compose.yaml` (loopback port,
+      `./data` volume, `.env`), `.dockerignore`; home-server.md
+- [x] Optional login: `APP_PASSWORD` → `/api/session` (login/logout/status), signed
+      HttpOnly cookie, middleware on `/api`, 5 failures/min throttle, `doctor` check, warning
+      when exposed without a password
+- [x] Login page and Settings → App login (sign out); 401 anywhere → back to the login form
+- [ ] **You:** set `APP_PASSWORD`, publish the LAN port, check login on laptop and phone
+
 ## Possible next steps
 - [ ] Brief accuracy: give the model precomputed comparisons (e.g. strain vs yesterday) and
       check that every number in a brief appears in its input data

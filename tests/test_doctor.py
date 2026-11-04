@@ -107,3 +107,14 @@ async def test_stale_data_warns(settings: Settings) -> None:
     result = _by_name(await run_checks(settings))["Data freshness"]
     assert result.level is Level.WARN
     assert "72 h ago" in result.detail
+
+
+async def test_login_check(settings: Settings) -> None:
+    async def level(s: Settings) -> Level:
+        return _by_name(await run_checks(s))["Login"].level
+
+    exposed = settings.model_copy(update={"host": "0.0.0.0"})
+    assert await level(settings) is Level.OK  # loopback only: no login needed
+    assert await level(exposed) is Level.WARN
+    protected = exposed.model_copy(update={"app_password": SecretStr("pw")})
+    assert await level(protected) is Level.OK
