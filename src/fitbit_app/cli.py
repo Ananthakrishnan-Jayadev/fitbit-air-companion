@@ -29,8 +29,8 @@ from fitbit_app.main import create_app
 from fitbit_app.scoring import ScoreService
 from fitbit_app.storage.db import create_db_engine, create_session_factory
 from fitbit_app.storage.export import backup_database, write_export
-from fitbit_app.storage.models import SyncState
 from fitbit_app.storage.migrate import upgrade_to_head
+from fitbit_app.storage.models import SyncState
 from fitbit_app.storage.normalize import renormalize
 
 app = typer.Typer(no_args_is_help=True, help="Fitbit Air companion app.")
