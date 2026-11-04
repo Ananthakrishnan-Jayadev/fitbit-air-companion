@@ -93,6 +93,13 @@ The console script is declared in `pyproject.toml`:
 fitbit = "fitbit_app.cli:app"
 ```
 
+**Optional: Docker on a home server.** `Dockerfile` + `compose.yaml` run the same single
+process (`fitbit serve`) in one container: the UI is built in a Node stage, the app runs as
+a non-root user, `./data` is a mounted volume, settings come from `.env`, and the port is
+published on the host's `127.0.0.1` only (reached via SSH tunnel). Ollama stays on the main
+machine (`OLLAMA_HOST`). No code differs between the two ways of running. See
+[home-server.md](home-server.md).
+
 ---
 
 ## 4. System architecture

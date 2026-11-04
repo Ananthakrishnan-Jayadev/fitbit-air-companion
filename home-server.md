@@ -1,8 +1,8 @@
-# Home server: run the app 24/7 on a spare laptop
+# Home server: run the app 24/7 in Docker on a spare laptop
 
-A plan for running the app on an old laptop that is always on, so data keeps syncing while
-your main machine is off. The AI model stays on your main machine. No code changes are
-needed: everything below is configuration.
+The app runs as a Docker container on an always-on home server (an old laptop), so data keeps
+syncing while your main machine is off. Ollama stays on the main machine, which has the GPU.
+You reach the app from the main machine through SSH.
 
 ## Why not a cloud host (Vercel + Supabase)?
 
@@ -18,100 +18,96 @@ that model:
 | SQLite-specific code | Upserts, pragmas, file permissions and backups are SQLite-specific and would need porting to Postgres. |
 
 It would also break the project rule that health data goes nowhere except Google and the
-local Ollama instance (CLAUDE.md §6). A spare laptop on a private network avoids all of this.
+local Ollama instance (CLAUDE.md §6).
 
 ## Target setup
 
 ```
- ┌─────────────── Tailscale (private network, your devices only) ───────────────┐
- │                                                                              │
- │  Old laptop (always on)                     Main machine (on when you use it)│
- │  ─────────────────────                      ─────────────────────────────────│
- │  fitbit serve                               ollama serve                     │
- │   ├─ sync every 15 min ──▶ Google Health    qwen3.5:9b                       │
- │   ├─ scoring, baselines                        ▲                             │
- │   ├─ SQLite (data/)                            │ AI requests                  │
- │   └─ web UI :8000  ────────────────────────────┘ (OLLAMA_HOST)               │
- │         ▲                                                                    │
- │         └── browser on laptop / phone (SSH tunnel or Tailscale IP)           │
- └──────────────────────────────────────────────────────────────────────────────┘
+ Main machine (GPU)                              Home server (always on, Docker)
+ ──────────────────                              ───────────────────────────────
+ browser ── http://127.0.0.1:8000                container "fitbit" (fitbit serve)
+    │                                             ├─ sync every 15 min ──▶ Google Health
+    └── SSH tunnel ─────────────────────────────▶ ├─ scoring, SQLite in ./data
+                                                  └─ UI + API on server's 127.0.0.1:8000
+ ollama serve (qwen3.5:9b)  ◀── AI requests ──────┘   (OLLAMA_HOST)
 ```
 
-| Machine | Runs | Needs |
+| Machine | Runs | Notes |
 |---|---|---|
-| Old laptop | `fitbit serve`: sync, scoring, database, UI | ~1–2 GB free RAM, stays on, Python 3.12 |
-| Main machine | Ollama with `qwen3.5:9b` | ~6–7 GB free RAM/VRAM for the model |
+| Home server | `fitbit` container: sync, scoring, database, UI | ~300–600 MB RAM; port published on its loopback only |
+| Main machine | Ollama with `qwen3.5:9b` | Needs ~6–7 GB free RAM/VRAM for the model |
 
 **When the main machine is off:** sync, scores and charts keep working. The AI brief and
 Coach show as unavailable, and the brief for a missed day is written once Ollama is back.
-The app already handles an unreachable Ollama (CLAUDE.md §2).
 
-## Can the old laptop run the AI too?
+**One copy only:** run the app on the server *or* the main machine, never both. Two copies
+would both sync and their databases would diverge.
 
-Probably not well. `qwen3.5:9b` needs about 6–7 GB of memory, and 4 GB of system RAM also has
-to hold the OS and the app. A small (~4B, quantized) model might fit, but only on a supported
-NVIDIA or AMD GPU with ~4 GB of its own memory, and its output would be noticeably weaker.
+## What's in the repo
 
-Check the hardware first. On the old laptop:
+| File | Purpose |
+|---|---|
+| `Dockerfile` | Two stages: Node builds the UI, then a slim Python 3.12 image installs the app and runs `fitbit serve` as a non-root user |
+| `compose.yaml` | Service `fitbit`: settings from `.env`, `./data` mounted at `/app/data`, port published on `127.0.0.1` only, `restart: unless-stopped`, rotated logs |
+| `.dockerignore` | Keeps `.env`, `data/`, databases, `.git` and `node_modules` out of the image |
 
-```bash
-free -h                     # total / available RAM
-lspci | grep -iE 'vga|3d'   # GPU model
-nvidia-smi                  # NVIDIA only: driver, VRAM
-```
+The image contains no secrets or health data: `.env` is read at run time and `data/` is a
+mounted folder on the server.
 
 ## Steps
 
-### 1. Prepare the old laptop
+Replace `server` with however you SSH into the home server (e.g. `user@192.168.1.50`).
 
-- Install a lightweight Linux (e.g. Ubuntu Server or Debian). Turn on **full-disk
-  encryption** during install: the database holds your health data.
-- Keep it running with the lid closed. In `/etc/systemd/logind.conf` set
-  `HandleLidSwitch=ignore` and `HandleLidSwitchExternalPower=ignore`, then
-  `sudo systemctl restart systemd-logind`. Disable automatic suspend.
-- Leave it plugged in. Consider capping battery charge (if the BIOS supports it) to protect
-  an old battery.
-
-### 2. Install Tailscale on both machines (and your phone)
-
-- Install Tailscale on the old laptop, the main machine and your phone, signed in to the same
-  account. Note each machine's Tailscale IP (`tailscale ip -4`) or MagicDNS name.
-- Enable SSH on the old laptop (`openssh-server`) so you can manage it from the main machine.
-
-### 3. Move the app
-
-On the old laptop:
+### 1. On the main machine: stop the app and back up
 
 ```bash
-git clone <your repo> fitbit && cd fitbit
-python3.12 -m venv .venv && .venv/bin/pip install -e .
+# stop `fitbit serve` (Ctrl+C), then:
+.venv/bin/fitbit db backup
 ```
 
-Build the UI on the main machine (`fitbit build-ui`) and copy `src/fitbit_app/static/` over,
-or install Node.js on the old laptop and build there.
-
-Then **stop `fitbit serve` on the main machine** and copy `.env` and `data/` across:
+### 2. Put the code on the server
 
 ```bash
-scp .env old-laptop:fitbit/.env
-rsync -a data/ old-laptop:fitbit/data/
-ssh old-laptop 'chmod 600 fitbit/.env fitbit/data/*.db'
+ssh server 'git clone https://github.com/Ananthakrishnan-Jayadev/fitbit-air-companion.git ~/server/fitbit'
+```
+
+If the repo is private (or you don't want git credentials on the server), copy it instead:
+
+```bash
+rsync -a --exclude .venv --exclude frontend/node_modules --exclude data --exclude .env \
+  ./ server:~/server/fitbit/
+```
+
+### 3. Copy settings and data
+
+```bash
+scp .env server:~/server/fitbit/.env
+rsync -a --exclude backups data/ server:~/server/fitbit/data/
+ssh server 'chmod 600 ~/server/fitbit/.env ~/server/fitbit/data/*.db; id -u; id -g'
 ```
 
 `.env` and `data/` must go together: the saved Google token is encrypted with
-`FITBIT_SECRET_KEY` from `.env`. Afterwards, run the app on only one machine at a time:
-two copies would both sync and diverge.
+`FITBIT_SECRET_KEY` from `.env`.
 
-### 4. Point the app at Ollama on the main machine
+The container runs as UID/GID 1000. If `id -u` / `id -g` on the server print something else,
+build with your IDs in step 6: `UID=$(id -u) GID=$(id -g) docker compose up -d --build`.
 
-In the old laptop's `.env`:
+### 4. Edit the server's `.env`
 
 ```bash
-OLLAMA_HOST=http://<main-machine-tailscale-ip>:11434
+OLLAMA_HOST=http://<main-machine-ip>:11434
+TZ=America/Toronto        # optional: timestamps in container logs
 ```
 
-On the main machine, let Ollama accept connections from the network (by default it only
-listens on localhost):
+`HOST`, `PORT` and `DATA_DIR` are set by `compose.yaml`, so their `.env` values don't matter
+here. Keep `GOOGLE_REDIRECT_URI=http://127.0.0.1:8000/api/auth/callback` (see step 7).
+
+Use the main machine's LAN IP, or its Tailscale IP if both machines are on Tailscale (that
+also works away from home). A DHCP reservation on the router keeps the LAN IP stable.
+
+### 5. On the main machine: let the server reach Ollama
+
+By default Ollama only listens on localhost:
 
 ```bash
 sudo systemctl edit ollama
@@ -120,98 +116,102 @@ sudo systemctl edit ollama
 sudo systemctl restart ollama
 ```
 
-Ollama has no password, so allow port 11434 **only over Tailscale**:
+Ollama has no password, so allow port 11434 **only from the server**:
 
 ```bash
-sudo ufw allow in on tailscale0 to any port 11434 proto tcp
+sudo ufw allow from <server-ip> to any port 11434 proto tcp
 sudo ufw deny 11434/tcp
+sudo ufw enable            # if ufw isn't on yet; check `sudo ufw status` first
 ```
 
-Check from the old laptop: `.venv/bin/fitbit doctor` should show Ollama OK.
+(With Tailscale: `sudo ufw allow in on tailscale0 to any port 11434 proto tcp` instead.)
 
-### 5. Start the app automatically
-
-`fitbit serve` stays the single command; systemd just starts it at boot and restarts it if
-it crashes. As your user on the old laptop:
-
-```ini
-# ~/.config/systemd/user/fitbit.service
-[Unit]
-Description=Fitbit Air companion
-After=network-online.target
-
-[Service]
-WorkingDirectory=%h/fitbit
-ExecStart=%h/fitbit/.venv/bin/fitbit serve
-Restart=on-failure
-
-[Install]
-WantedBy=default.target
-```
+### 6. Start the container
 
 ```bash
-systemctl --user daemon-reload
-systemctl --user enable --now fitbit
-sudo loginctl enable-linger $USER     # keep running without being logged in
-journalctl --user -u fitbit -f        # follow the logs
+ssh server
+cd ~/server/fitbit
+docker compose up -d --build          # first build takes a few minutes
+docker compose logs -f                # Ctrl+C to stop following
+docker compose exec fitbit fitbit doctor
 ```
 
-### 6. Open the app
+`doctor` should show the database, Google and Ollama as OK. Database migrations run
+automatically when the container starts.
 
-**Option A: SSH tunnel (recommended).** The app stays bound to `127.0.0.1`, so it is never on
-the network:
+If port 8000 is taken by another container, set `FITBIT_PORT=8001` in the server's `.env`
+(compose reads it) and use that port on the server side of the tunnel below.
+
+### 7. Open the app (and reconnect Google)
+
+From the main machine:
 
 ```bash
-ssh -N -L 8000:127.0.0.1:8000 old-laptop
-# then open http://127.0.0.1:8000 on the main machine
+ssh -N -L 8000:127.0.0.1:8000 server        # or -L 8000:127.0.0.1:8001 with FITBIT_PORT
 ```
 
-**Option B: from your phone.** Phones can't easily hold an SSH tunnel. Set `HOST=0.0.0.0` in
-the old laptop's `.env` and allow port 8000 only over Tailscale:
+Then open `http://127.0.0.1:8000`. Make sure no local `fitbit serve` is using port 8000.
+
+Google only redirects to `http://127.0.0.1:8000/api/auth/callback`. Through the tunnel the
+browser is on `127.0.0.1:8000`, so **Settings → Reconnect Google** works unchanged. In
+Testing mode that's needed about once a week.
+
+Tip: add a host entry to `~/.ssh/config` on the main machine so it's one short command:
+
+```
+Host fitbit-server
+    HostName <server-ip>
+    User <user>
+    LocalForward 8000 127.0.0.1:8000
+```
+
+`ssh -N fitbit-server` then opens the tunnel.
+
+### 8. Everyday commands (on the server, in `~/server/fitbit`)
+
+| Task | Command |
+|---|---|
+| Status / health | `docker compose ps` |
+| Logs | `docker compose logs -f --tail 100` |
+| Update after `git pull` | `git pull && docker compose up -d --build` |
+| Restart / stop | `docker compose restart` / `docker compose down` |
+| Any CLI command | `docker compose exec fitbit fitbit sync` (or `analyze`, `brief`, `doctor`…) |
+| Backup | `docker compose exec fitbit fitbit db backup` → `./data/backups/` |
+| Shrink the DB file | `docker compose stop && sqlite3 data/fitbit.db 'VACUUM;' && docker compose start` |
+
+The container restarts on crashes and after reboots (as long as Docker starts at boot:
+`sudo systemctl enable docker`).
+
+### 9. Backups off the server
+
+Backups are health data; keep them on encrypted disks only. For example, from the main
+machine, weekly:
 
 ```bash
-sudo ufw allow in on tailscale0 to any port 8000 proto tcp
-sudo ufw deny 8000/tcp
+ssh server 'cd ~/server/fitbit && docker compose exec -T fitbit fitbit db backup'
+rsync -a server:~/server/fitbit/data/backups/ ~/fitbit-backups/
 ```
 
-Then open `http://<old-laptop-tailscale-ip>:8000` on the phone. The app has no login, so this
-relies on Tailscale and the firewall: only your own devices can reach it. Never forward this
-port on your router.
+Delete old backups on the server now and then; each is a full copy of the database.
 
-### 7. Reconnect Google (weekly, in Testing mode)
+## Security checklist
 
-Google only redirects back to `http://127.0.0.1:8000/api/auth/callback`. Always reconnect
-through the SSH tunnel from step 6A: open `http://127.0.0.1:8000` → Settings → Reconnect
-Google. The browser lands on `127.0.0.1`, the tunnel carries it to the old laptop, and the
-redirect matches. Refresh tokens last 7 days while the OAuth app is in Testing mode.
+- [ ] Port published as `127.0.0.1:8000:8000`, never `8000:8000`. Docker bypasses ufw, so a
+      bare port mapping would expose the app, which has no login, to your whole network.
+- [ ] No router port forwarding for 8000 or 11434.
+- [ ] Ollama port allowed only from the server (or only over Tailscale).
+- [ ] `.env` and `data/*.db` are `chmod 600` on the server.
+- [ ] Server disk encrypted if possible (it holds your health data).
+- [ ] Only one copy of the app running.
 
-### 8. Backups
+## Optional: open it from your phone
 
-Add a weekly copy off the laptop, e.g. a cron job on the main machine:
+Phones can't easily hold an SSH tunnel. With Tailscale on the server and the phone, change
+the port line in `compose.yaml` to the server's Tailscale IP:
 
-```bash
-ssh old-laptop 'cd fitbit && .venv/bin/fitbit db backup'
-rsync -a old-laptop:fitbit/data/backups/ ~/fitbit-backups/
+```yaml
+      - "<server-tailscale-ip>:8000:8000"
 ```
 
-Backups are health data: keep them on encrypted disks only.
-
-## Checklist
-
-- [ ] Check old laptop RAM / GPU (`free -h`, `lspci`, `nvidia-smi`)
-- [ ] Linux with full-disk encryption; lid-close and suspend disabled
-- [ ] Tailscale on old laptop, main machine and phone; SSH on old laptop
-- [ ] Repo, venv and built UI on the old laptop
-- [ ] Stop the app on the main machine; copy `.env` + `data/`; `chmod 600`
-- [ ] `OLLAMA_HOST` on the old laptop → main machine; Ollama on `0.0.0.0` + firewall
-- [ ] `fitbit doctor` all OK from the old laptop
-- [ ] systemd user service enabled, linger on
-- [ ] Access via SSH tunnel (and optionally phone over Tailscale + firewall)
-- [ ] Google reconnect tested through the tunnel
-- [ ] Weekly backup copied off the laptop
-
-## Later (optional)
-
-- If the old laptop's GPU can run a small model, use it as a backup for when the main
-  machine is off. This would need the app to try a second Ollama host, which is a code change
-  to discuss first.
+Only devices on your tailnet can reach that address. Google reconnects still go through the
+SSH tunnel from the main machine, since the redirect must land on `127.0.0.1`.

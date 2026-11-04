@@ -75,23 +75,29 @@ inside the file; to shrink the file itself, stop the server and run
 Logs: console, plus `data/logs/fitbit.log` (rotated at 5 MB, 3 kept). Logs never contain
 health values or tokens.
 
-## Run 24/7 on a spare machine
+## Run 24/7 on a home server (Docker)
 
-To keep syncing while your main machine is off, run the app on an always-on spare laptop
-over [Tailscale](https://tailscale.com) and keep Ollama on your main machine:
+To keep syncing while your main machine is off, run the app as a Docker container on an
+always-on home server and keep Ollama on your main machine:
 
-- **Spare laptop:** `fitbit serve` (sync, scoring, database, UI). Started at boot by a
-  systemd user service.
-- **Main machine:** Ollama. The spare laptop reaches it via `OLLAMA_HOST=http://<tailscale-ip>:11434`,
-  with Ollama's port allowed only over Tailscale.
-- **Access:** SSH tunnel (`ssh -N -L 8000:127.0.0.1:8000 spare-laptop`), or from your phone
-  over Tailscale with a firewall. Reconnect Google through the tunnel so the
-  `127.0.0.1` redirect still matches.
-- **When the main machine is off:** sync, scores and charts keep working. AI pauses until
-  Ollama is back.
+```bash
+# on the server, in the repo, with .env and data/ copied over
+docker compose up -d --build
+docker compose exec fitbit fitbit doctor
 
-No code changes are needed. Full plan, step by step: [home-server.md](home-server.md). It also
-explains why a serverless host such as Vercel (with Supabase) is a poor fit.
+# on the main machine: tunnel, then open http://127.0.0.1:8000
+ssh -N -L 8000:127.0.0.1:8000 server
+```
+
+- **Server:** the `fitbit` container (sync, scoring, database, UI), restarted automatically.
+  The port is published on the server's `127.0.0.1` only; the app has no login.
+- **Main machine:** Ollama. Set `OLLAMA_HOST=http://<main-machine-ip>:11434` in the server's
+  `.env` and allow port 11434 only from the server.
+- **Google reconnect** works through the tunnel, because the browser stays on `127.0.0.1:8000`.
+- **When the main machine is off:** sync, scores and charts keep working; AI pauses.
+
+Step by step, including backups and the security checklist: [home-server.md](home-server.md).
+It also explains why a serverless host such as Vercel (with Supabase) is a poor fit.
 
 ## Tests
 

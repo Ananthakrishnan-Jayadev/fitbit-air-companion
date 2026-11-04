@@ -1,0 +1,23 @@
+# Never send secrets or health data into the build context / image.
+.env
+data/
+*.db
+*.db-wal
+*.db-shm
+*.zip
+
+.git/
+.venv/
+**/__pycache__/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+tests/
+
+frontend/node_modules/
+frontend/dist/
+src/fitbit_app/static/
+
+.vscode/
+.idea/
+.DS_Store

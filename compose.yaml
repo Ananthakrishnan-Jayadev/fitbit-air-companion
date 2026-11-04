@@ -1,0 +1,30 @@
+# Run on the home server: docker compose up -d --build
+# Settings come from .env (same file as a local install). See home-server.md.
+services:
+  fitbit:
+    build:
+      context: .
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    image: fitbit-air-companion:latest
+    container_name: fitbit
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Override .env values that only make sense outside a container.
+      HOST: 0.0.0.0
+      PORT: "8000"
+      DATA_DIR: /app/data
+      TZ: ${TZ:-UTC}
+    volumes:
+      - ./data:/app/data
+    ports:
+      # Host loopback only. Docker bypasses ufw, so never publish as "8000:8000" (that opens
+      # the app, which has no login, to the whole network). Reach it with an SSH tunnel.
+      - "127.0.0.1:${FITBIT_PORT:-8000}:8000"
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
