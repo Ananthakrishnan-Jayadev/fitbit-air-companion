@@ -100,7 +100,7 @@ function RecoverySleeve({ data }: { data: TodayResponse }) {
         <>
           <p className="mt-1 font-condensed text-2xl font-light">out of 100</p>
           {/* The score at poster scale, bleeding off the sleeve's right edge. */}
-          <p className="-mr-[0.07em] mt-auto self-end font-condensed text-[clamp(9.5rem,52vw,19rem)] font-black leading-[0.76] tracking-[-0.035em]">
+          <p className="-mr-[0.07em] mt-auto self-end font-condensed text-[clamp(9.5rem,52vw,19rem)] font-extrabold leading-[0.76] tracking-[-0.035em]">
             <CountUp value={recovery} />
           </p>
           {verdict && <p className="relative mt-5 max-w-md text-[17px] font-medium leading-snug">{verdict}</p>}
@@ -152,7 +152,7 @@ function Pillar({ to, name, field, color, value, digits = 0, max, aside, target,
       >
         <span className="font-condensed text-lg font-black uppercase leading-none">{name}</span>
         <span className="font-condensed text-sm font-light">/{max}</span>
-        <span className="-mr-[0.06em] mt-auto self-end font-condensed text-[4.6rem] font-black leading-[0.78] tracking-[-0.03em] sm:text-[6rem]">
+        <span className="-mr-[0.06em] mt-auto self-end font-condensed text-[4.6rem] font-extrabold leading-[0.78] tracking-[-0.03em] sm:text-[6rem]">
           {value === null ? "—" : <CountUp value={value} digits={digits} />}
         </span>
       </Link>
@@ -243,7 +243,7 @@ function WeekShelf({ date }: { date: string }) {
                 style={{ backgroundColor: field.bg, color: field.fg }}
               >
                 {formatWeekday(day)}
-                <span className="-mr-[0.05em] mt-auto self-end font-condensed text-2xl font-black leading-[0.8] sm:text-4xl">
+                <span className="-mr-[0.05em] mt-auto self-end font-condensed text-2xl font-extrabold leading-[0.8] sm:text-4xl">
                   {formatNumber(value)}
                 </span>
               </Link>

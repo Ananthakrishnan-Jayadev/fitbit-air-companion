@@ -3,7 +3,8 @@
 @tailwind utilities;
 
 /*
- * Blue Note Sleeve (design.md). Colour roles:
+ * Blue Note Sleeve (design.md), toned down: fields and the shell are muted (~70% saturation)
+ * so the type carries the voice, not the colour. Colour roles:
  *   - cobalt: the shell (nav rail) and the one reserved accent for today / selected / focus
  *   - fields: recovery band (good / warning / critical), sleep (indigo), strain (orange).
  *     Flat, never gradients; text on a field uses its --on-* colour; always labelled.
@@ -11,42 +12,42 @@
  * Neutrals are the remapped `stone` ramp in tailwind.config.ts.
  */
 :root {
-  --cobalt: #1f3fd1;
+  --cobalt: #34508f;
   --cobalt-ink: #ffffff;
   --surface-1: #ffffff;
-  --ink-1: #111111;
+  --ink-1: #1a1a1c;
   --ink-2: #3d3c39;
   --ink-muted: #6f6e68;
   --grid: #e4e3dd;
   --axis: #c3c2ba;
-  --series-1: #111111;
-  --series-1-wash: rgba(17, 17, 17, 0.07);
+  --series-1: #1a1a1c;
+  --series-1-wash: rgba(26, 26, 28, 0.07);
   /* Ordinal ramp (activity level): the strain field from pale to full. */
-  --seq-250: #f7c9a3;
-  --seq-350: #f3a466;
-  --seq-450: #ef7a1e;
-  --seq-600: #a8500c;
+  --seq-250: #ecd2bb;
+  --seq-350: #e0ad84;
+  --seq-450: #cf8a55;
+  --seq-600: #94603a;
   /* Pillar fields. */
-  --sleep: #3a2bb0;
-  --sleep-wash: rgba(58, 43, 176, 0.1);
-  --on-sleep: #ffffff;
-  --strain: #ef7a1e;
-  --strain-wash: rgba(239, 122, 30, 0.14);
-  --on-strain: #111111;
+  --sleep: #4b4690;
+  --sleep-wash: rgba(75, 70, 144, 0.1);
+  --on-sleep: #f3f1ea;
+  --strain: #cf8a55;
+  --strain-wash: rgba(207, 138, 85, 0.14);
+  --on-strain: #1a1a1c;
   /* Status fields: always shown with a text label, never colour alone. */
-  --good: #1f6f4a;
-  --on-good: #ffffff;
-  --warning: #e0a21a;
-  --on-warning: #111111;
-  --serious: #e26a2c;
-  --critical: #c8402a;
-  --on-critical: #ffffff;
+  --good: #3d6b55;
+  --on-good: #f3f1ea;
+  --warning: #c9a55c;
+  --on-warning: #1a1a1c;
+  --serious: #c27a52;
+  --critical: #a9503d;
+  --on-critical: #f3f1ea;
 }
 
 /* Dark tokens follow the `dark` class (see src/theme.ts), not the media query directly. */
 :root.dark {
   color-scheme: dark;
-  --cobalt: #2a49e0;
+  --cobalt: #4a64a8;
   --surface-1: #18181b;
   --ink-1: #f2f1ec;
   --ink-2: #c3c2ba;
@@ -55,13 +56,13 @@
   --axis: #3d3c39;
   --series-1: #f2f1ec;
   --series-1-wash: rgba(242, 241, 236, 0.08);
-  --sleep: #5a48d6;
-  --sleep-wash: rgba(124, 108, 240, 0.16);
-  --strain: #f0842b;
-  --strain-wash: rgba(240, 132, 43, 0.16);
-  --good: #23805a;
-  --warning: #e3a826;
-  --critical: #d4482f;
+  --sleep: #5a549e;
+  --sleep-wash: rgba(140, 132, 210, 0.16);
+  --strain: #cc8754;
+  --strain-wash: rgba(204, 135, 84, 0.16);
+  --good: #3f7059;
+  --warning: #c4a15a;
+  --critical: #a9503d;
 }
 
 :root:not(.dark) {
@@ -99,7 +100,7 @@ a {
   /* Reid Miles voice: condensed, black, upper case; the light weight carries the aside. */
   .page-title {
     font-stretch: 62%;
-    font-weight: 900;
+    font-weight: 800;
     text-transform: uppercase;
     font-size: 2.75rem;
     line-height: 1;

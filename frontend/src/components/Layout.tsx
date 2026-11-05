@@ -16,7 +16,7 @@ function navClass({ isActive }: { isActive: boolean }): string {
 }
 
 // Pillar dots, lightened so they read on cobalt.
-const TONE_DOT: Record<string, string> = { sleep: "bg-[#b9adff]", strain: "bg-strain" };
+const TONE_DOT: Record<string, string> = { sleep: "bg-[#c4bfe6]", strain: "bg-strain" };
 
 function Brand({ className = "" }: { className?: string }) {
   return (
