@@ -380,24 +380,28 @@ Intraday series are `[epoch_ms, value]` pairs. Day-level dates are local days.
 
 | Page | Contents |
 |---|---|
-| **Today** | 7-day recovery strip; recovery hero (count-up number, status glow + label, coach verdict, "Ask why"), sleep / strain (with target) / stress tiles, flags, activity tiles, "compared with your normal" table, recovery + sleep breakdowns, coach's brief (+ anomaly note, weekly review) |
-| **Heart** | Intraday HR with resting line, Google HR zones, 60-day resting HR and HRV trends |
-| **Sleep** | Hypnogram, minutes per stage, overnight SpO2 and HRV, breathing rate, skin temperature, last 14 nights |
-| **Activity** | Daily totals, steps by hour, minutes per activity level, stress timeline, workouts |
-| **Body** | Weight and body fat from a smart scale (via Health Connect → Google Health): latest values, 7/30-day change, fat/lean mass, trends |
-| **Trends** | Any metric over 30/90/180/365 days vs baseline band |
-| **Journal** | Tag chips (presets + custom) and notes per day, "What affects you" table, last 14 days |
-| **Coach** | Streaming chat with the local model (can look up history via tools) |
-| **Settings** | Google connection, per-type sync status + backfill, profile, data download, system status, app sign-out (when a password is set) |
+| **Today** | Recovery sleeve (score on its band field, verdict, proof line vs normal, "Ask why"; fills a phone's first screen), sleep and strain sleeves (strain target bracket), warnings + coach's brief (third column at 2xl), 7-day shelf, "Your day" (incl. stress), "compared with your normal" table, recovery + sleep breakdowns |
+| **Heart** | Zoomable intraday HR (full detail below a 4 h window) with resting line, 60-day resting HR and HRV trends; side panel: day stats + Google HR zones |
+| **Sleep** | Hypnogram, minutes per stage, overnight SpO2 and HRV, breathing rate, skin temperature; side panel: last 14 nights |
+| **Activity** | Daily totals, steps by hour, minutes per activity level, stress timeline; side panel: workouts |
+| **Body** | Weight and body fat from a smart scale (via Health Connect → Google Health): trends; side panel: latest values, 7/30-day change, fat/lean mass |
+| **Trends** | Any metric over 30/90/180/365 days vs baseline band, plus 3 related metrics; side panel: latest, 7/30-day average, normal range, change, highest/lowest, days with data |
+| **Journal** | Tag chips (presets + custom) and notes per day beside the "What affects you" table; last 14 days below |
+| **Coach** | Streaming chat with the local model (can look up history via tools); side panel: latest day, suggested questions, what the coach sees |
+| **Settings** | Two columns: Google connection, per-type sync status + backfill, app sign-out (when a password is set); profile, data download, system status |
 | **Login** | Password form shown instead of the app when `APP_PASSWORD` is set and the browser has no session |
 
-App shell (Phase 6, see design.md): Light / Dark / Auto theme toggle, ⌘K command palette,
-skip link and focus rings, mobile header + bottom tab bar, and Motion animations (page fade,
-staggered cards, count-up numbers, filling meters) that respect the OS reduce-motion setting.
-"Ask the coach" links on scores and charts open the Coach page with a prepared question.
+App shell (design.md): navy nav rail with the Light / Dark / Auto toggle, ⌘K command palette,
+skip link and focus rings, mobile header + bottom tab bar. Visual world "Blue Note Sleeve"
+(Phase 8): Archivo (bundled), flat muted colour fields, square corners. Pages grow to 1600px
+with a sticky context side panel from 1280px (`components/PageLayout.tsx`). Motion shows
+change (numbers and meters roll between days, selection slides) and respects the OS
+reduce-motion setting. "Ask the coach" links on scores and charts open the Coach page with a
+prepared question.
 
-Charts: ECharts (tree-shaken, own chunk), reference dataviz palette as CSS tokens (light/dark),
-one y-axis per chart, hover tooltips, and a table view on every chart. Chart pages load lazily.
+Charts: ECharts (tree-shaken, own chunk), colours as CSS tokens (light/dark), one y-axis per
+chart, hover tooltips, a table view on every chart, in-place updates that glide between days
+and metrics, height scaled with screen width. Chart pages load lazily.
 
 Build output goes to `src/fitbit_app/static/` so the Python package serves it directly.
 

@@ -5,6 +5,9 @@ API, computes recovery/sleep/strain scores, and writes daily insights with a loc
 model.
 
 - Architecture (as built): [project.md](project.md)
+- Product context (who it's for, principles): [PRODUCT.md](PRODUCT.md)
+- Visual design (colour, type, layout, motion): [design.md](design.md)
+- Running it 24/7 on a home server: [home-server.md](home-server.md)
 - Original phase plan: [development-plan.md](development-plan.md)
 - Checklist + next steps: [task.md](task.md)
 - Build rules: [CLAUDE.md](CLAUDE.md)
@@ -17,8 +20,19 @@ model.
   daily target), stress, and illness / overreach warnings.
 - **Pages:** Today, Heart, Sleep, Activity, Body (smart-scale weight and body fat), Trends,
   Journal ("what affects you"), Coach, Settings. Every chart has a table view and an "Ask the coach" link.
+- **Look:** "Blue Note Sleeve": each day's scores shown like record sleeves, the score at
+  poster scale on a flat, muted colour field (recovery band, sleep, strain), a navy nav rail,
+  and the Archivo typeface (bundled with the app, no font service).
+- **Wide screens:** pages fill a 1920px monitor with side panels of context (Trends stats and
+  related metrics, Heart zones, 14-night sleep history, workouts, coach context); on laptops
+  and phones the panels move under the main content. On a phone, recovery fills the first screen.
+- **Charts:** lines glide between days and metrics instead of redrawing; the Heart day is
+  zoomable and shows every reading once you zoom below 4 hours.
 - **Interface:** Light / Dark / Auto theme, ⌘K (Ctrl+K) command palette, mobile tab bar,
-  subtle animations that turn off with your OS "reduce motion" setting.
+  motion that shows change (numbers roll from yesterday's value) and turns off with your OS
+  "reduce motion" setting.
+- **Optional login:** set `APP_PASSWORD` to require a password, e.g. when other devices on
+  your home network can reach the app.
 - **Local AI coach** (Ollama, default `qwen3.5:9b`): daily brief, weekly review, anomaly
   notes, and a chat that can look up your history. It sees summaries only, never raw data,
   and nothing leaves your machine except the Google sync itself.

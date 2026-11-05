@@ -1,10 +1,55 @@
-# Design direction (Phase 6: UI refresh)
+# Design
 
-Based on Figma's "Top web design trends for 2026", filtered for a personal, local-first
-health dashboard. Decisions (2026-10-31): **no gamification**, **Coach stays its own page**,
-**use the Motion library** for animation.
+The app's visual design, newest decisions first in effect. Product context lives in
+[PRODUCT.md](PRODUCT.md); the direction contract for the current world is in
+`.impeccable/surfaces/`.
 
-## Principles
+**Current state (2026-11-06):** visual world **"Blue Note Sleeve"** (Phase 8), toned down to
+muted colours; wide-screen layout with side panels (Phase 8 layout); motion shows change and
+charts glide (Phase 7). Phase 6 and 7 notes below are kept for history; where they conflict
+with Phase 8, Phase 8 wins (e.g. system fonts → bundled Archivo, stone neutrals → remapped
+paper-to-ink ramp, rounded cards → square).
+
+## Phase 8: visual world "Blue Note Sleeve" (2026-11-05)
+
+Chosen on the Impeccable decision page (assigned direction; alternates were Morning Forecast,
+Baseline Spectrum, Grid Specimen and the category standard). Each day is issued like a
+Blue Note record sleeve: one score at poster scale in condensed type on a flat field.
+
+- **Type:** Archivo variable (weight + width axes), bundled via `@fontsource-variable/archivo`.
+  Condensed (`font-stretch: 62%`), extra-bold, upper case for page titles (`.page-title`),
+  section openers (`.section-title`, 2px ink rule), card titles and figures; regular width for
+  UI text. Mixed weights in one line ("RECOVERY **high**" = black + light).
+- **Colour** (tokens in `src/index.css`, muted to ~70% saturation after feedback):
+
+  | Role | Light | Dark | Text on it |
+  |---|---|---|---|
+  | Shell rail + today/selected accent | `#34508f` | `#4a64a8` | white |
+  | Recovery high | `#3d6b55` | `#3f7059` | off-white `#f3f1ea` |
+  | Recovery moderate | `#c9a55c` | `#c4a15a` | ink `#1a1a1c` |
+  | Recovery low | `#a9503d` | `#a9503d` | off-white |
+  | Sleep | `#4b4690` | `#5a549e` | off-white |
+  | Strain | `#cf8a55` | `#cc8754` | ink |
+
+  All text/field pairs pass WCAG AA (checked). Fields are flat (no gradients, glows or
+  shadows) and always carry a text label. Other chart series are ink; only the selected or
+  current series is in full ink.
+- **Shape:** square corners (radius ≤ 3px; dots stay round); hairline panels; 2px ink rules
+  open sections; target ranges drawn as ink brackets on meters.
+- **Neutrals:** Tailwind `stone` remapped to a paper (`#f6f6f3`) → ink (`#0e0e10`) ramp in
+  `tailwind.config.ts`.
+- **Signature:** the sleeve. Today: recovery sleeve (square on desktop, the whole first
+  screen on a phone), sleep/strain sleeves, a 7-day shelf of thumbnail sleeves; Coach repeats
+  the three as small sleeves.
+- **Raises from the declined directions:** only the selected series in full ink (transit);
+  one accent for today/selected (orienteering); one complete state owns the phone's first
+  screen (vertical feed); every score shows its proof vs normal (monochrome product).
+
+## Phase 6: UI refresh (2026-10-31)
+
+Based on Figma's "Top web design trends for 2026".
+
+### Principles
 1. **Calm, data-first.** The numbers are the hero. No decoration that competes with data.
 2. **Small moments of delight.** Motion that explains change (a meter filling, a number
    counting up), never motion for its own sake.
@@ -12,7 +57,7 @@ health dashboard. Decisions (2026-10-31): **no gamification**, **Coach stays its
    both themes at WCAG AA contrast.
 4. **Local and lean.** System fonts, no CDNs, no external assets. One new dependency: Motion.
 
-## Trends adopted
+### Trends adopted
 | Trend (Figma) | How we use it |
 |---|---|
 | Dark mode + toggle | Light / Dark / System toggle in the header, remembered per browser |
@@ -23,7 +68,7 @@ health dashboard. Decisions (2026-10-31): **no gamification**, **Coach stays its
 | Modern navigation | ⌘K / Ctrl+K command palette (pages, jump to a day, ask the coach); bottom tab bar on mobile |
 | Accessible, sustainable design | Skip link, visible focus rings, `aria-live` for streaming chat, contrast check in both themes |
 
-## Trends rejected (and why)
+### Trends rejected (and why)
 - **Gamification:** your call; also avoids nagging and pressure around health data.
 - **Voice interfaces:** browser speech recognition sends audio to Google/Apple servers.
 - **3D/WebGL, neumorphism, retrofuturism, maximalism, collage, neo-brutalism:** wrong tone
