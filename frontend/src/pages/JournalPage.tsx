@@ -43,7 +43,7 @@ function EntryEditor({ date, entry, allTags }: { date: string; entry?: JournalEn
 
   return (
     <div className="rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
-      <h2 className="text-sm font-semibold">{formatDayLabel(date)}</h2>
+      <h2 className="font-condensed text-[1.35rem] font-extrabold uppercase leading-none">{formatDayLabel(date)}</h2>
       <p className="mb-3 text-xs text-stone-500">
         Tag what happened this day. It is compared with how you slept that night and recovered the next morning.
       </p>
@@ -58,7 +58,7 @@ function EntryEditor({ date, entry, allTags }: { date: string; entry?: JournalEn
               onClick={() => toggle(tag)}
               className={`rounded-full border px-3 py-1 text-sm ${
                 on
-                  ? "border-stone-900 bg-stone-900 text-white dark:border-stone-100 dark:bg-stone-100 dark:text-stone-900"
+                  ? "border-cobalt bg-cobalt text-white"
                   : "border-stone-300 hover:bg-stone-100 dark:border-stone-700 dark:hover:bg-stone-800"
               }`}
             >
@@ -123,7 +123,7 @@ function WhatAffectsYou() {
   return (
     <section className="rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold">What affects you</h2>
+        <h2 className="font-condensed text-[1.35rem] font-extrabold uppercase leading-none">What affects you</h2>
         <select
           className={INPUT}
           value={outcome}
@@ -178,7 +178,7 @@ export default function JournalPage() {
 
   return (
     <section className="max-w-4xl">
-      <h1 className="mb-4 text-2xl font-semibold tracking-tight">Journal</h1>
+      <h1 className="page-title">Journal</h1>
       <div className="mb-6 flex flex-wrap items-center gap-2">
         <button type="button" className={BUTTON_SECONDARY} onClick={() => setDate(addDays(date, -1))} aria-label="Previous day">
           <ChevronLeft />
@@ -213,7 +213,7 @@ export default function JournalPage() {
       </div>
 
       <section className="mt-4 rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
-        <h2 className="mb-2 text-sm font-semibold">Last {HISTORY_DAYS} days</h2>
+        <h2 className="mb-3 font-condensed text-[1.35rem] font-extrabold uppercase leading-none">Last {HISTORY_DAYS} days</h2>
         {entries.length === 0 ? (
           <p className="text-sm text-stone-500">No entries yet.</p>
         ) : (

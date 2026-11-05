@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "tight-leading",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/model-pick.html"
+        ],
+        "createdAt": "2026-11-05T20:35:52.172Z",
+        "reason": "Claude: line-height <1.3 only on single-line display numerals (96px/36px/34px scores) in a throwaway decision sketch"
+      }
+    ]
+  }
+}

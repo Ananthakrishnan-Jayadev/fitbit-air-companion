@@ -36,7 +36,7 @@ export default function BriefCard({ date }: { date: string }) {
   return (
     <section className="rounded-lg border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900">
       <header className="mb-3 flex items-start justify-between gap-4">
-        <h2 className="text-sm font-semibold">Coach's brief</h2>
+        <h2 className="font-condensed text-[1.35rem] font-extrabold uppercase leading-none">Coach's brief</h2>
         {ready && (
           <button type="button" className={BUTTON_SECONDARY} disabled={writing} onClick={regenerate}>
             {writing ? "Writing…" : brief ? "Regenerate" : "Write it now"}

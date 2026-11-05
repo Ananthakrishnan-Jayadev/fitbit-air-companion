@@ -1,13 +1,10 @@
-import { motion } from "motion/react";
-import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import type { TodayResponse } from "../api/types.ts";
 import AskLink from "../components/AskLink.tsx";
 import BriefCard from "../components/BriefCard.tsx";
 import { DataTable } from "../components/ChartCard.tsx";
-import { useChartTokens } from "../components/charts/tokens.ts";
 import DateNav from "../components/DateNav.tsx";
-import { AlertTriangle, ChevronRight } from "../components/icons.tsx";
+import { AlertTriangle, ArrowRight } from "../components/icons.tsx";
 import Meter from "../components/Meter.tsx";
 import CountUp from "../components/motion/CountUp.tsx";
 import { LoadError, Loading } from "../components/PageState.tsx";
@@ -15,16 +12,28 @@ import { addDays, formatMinutes, formatNumber, formatWeekday } from "../format.t
 import { useInsights } from "../hooks/useAI.ts";
 import { useDaily, useToday } from "../hooks/useData.ts";
 import { useSelectedDate } from "../hooks/useSelectedDate.ts";
-import { FLAG_TEXT, formatMetric, metricDef, recoveryBand } from "../metrics.ts";
-import { BASE } from "../motion.ts";
+import { FLAG_TEXT, formatMetric, metricDef, recoveryBand, type RecoveryTone } from "../metrics.ts";
 
 /*
- * Layout (design.md "Today"): one reading path for the morning check.
- *   1. Recovery, with its last 7 days, leads.
- *   2. Sleep and strain, the other two pillars, sit beside it (below on a phone).
- *   3. Warnings, then the coach's brief.
- *   4. The day in numbers, then what's behind the scores, for the deep dive.
+ * Today as a set of record sleeves (design.md "Blue Note Sleeve"): recovery is the big
+ * sleeve, sleep and strain the small ones, the week a shelf of thumbnails. A sleeve is a flat
+ * field of its colour with the score at poster scale; every sleeve names its band in words
+ * and carries its proof line, so colour is never the only signal.
  */
+
+interface Field {
+  bg: string;
+  fg: string;
+}
+
+const BAND_FIELD: Record<RecoveryTone, Field> = {
+  good: { bg: "var(--good)", fg: "var(--on-good)" },
+  warning: { bg: "var(--warning)", fg: "var(--on-warning)" },
+  critical: { bg: "var(--critical)", fg: "var(--on-critical)" },
+};
+const SLEEP_FIELD: Field = { bg: "var(--sleep)", fg: "var(--on-sleep)" };
+const STRAIN_FIELD: Field = { bg: "var(--strain)", fg: "var(--on-strain)" };
+const EMPTY_FIELD: Field = { bg: "var(--grid)", fg: "var(--ink-1)" };
 
 const BASELINE_ROWS = [
   "resting_hr",
@@ -47,153 +56,135 @@ const COMPONENT_LABELS: Record<string, string> = {
   consistency: "Bedtime consistency",
 };
 
-const SURFACE = "rounded-lg border border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900";
+const RULE = { borderTop: "1px solid color-mix(in srgb, currentColor 40%, transparent)" };
+const PANEL = "border border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900";
 
-function SectionHeading({ id, children }: { id: string; children: ReactNode }) {
-  return (
-    <h2 id={id} className="mb-3 text-base font-semibold tracking-tight">
-      {children}
-    </h2>
-  );
+/** "54 ms · normal 46–58" for the proof line under a score. */
+function proof(data: TodayResponse, metric: string): string | null {
+  const value = data.metrics[metric];
+  if (value === null || value === undefined) return null;
+  const band = data.baselines[metric];
+  const normal = band ? ` · normal ${formatMetric(metric, band.low)}–${formatMetric(metric, band.high)}` : "";
+  return `${formatMetric(metric, value)}${normal}`;
 }
 
-function RecoveryPanel({ recovery, date }: { recovery: number | null; date: string }) {
-  const t = useChartTokens();
-  const verdict = useInsights(date).data?.daily_brief?.content.headline;
+function RecoverySleeve({ data }: { data: TodayResponse }) {
+  const recovery = data.recovery;
+  const verdict = useInsights(data.date).data?.daily_brief?.content.headline;
   const band = recovery === null ? null : recoveryBand(recovery);
-  // The band's hue tints the whole panel; the label beside the number carries the meaning.
-  const tint = band ? `color-mix(in oklab, ${t[band.tone]} 9%, transparent)` : undefined;
+  const field = band ? BAND_FIELD[band.tone] : EMPTY_FIELD;
+  const asleep = data.metrics.sleep_min;
+  const proofs: [string, string | null][] = [
+    ["HRV", proof(data, "hrv_rmssd_ms")],
+    ["Resting HR", proof(data, "resting_hr")],
+    ["Asleep", asleep === null || asleep === undefined ? null : formatMinutes(asleep)],
+  ];
 
   return (
     <section
       aria-labelledby="recovery-heading"
-      className={`${SURFACE} flex flex-col transition-colors duration-500`}
-      style={{ backgroundImage: tint ? `linear-gradient(${tint}, ${tint})` : undefined }}
+      // A phone's first screen belongs to this sleeve; on wide screens it is a square.
+      className="relative flex min-h-[64svh] flex-col overflow-hidden p-6 transition-colors duration-500 sm:p-7 lg:aspect-square lg:min-h-0"
+      style={{ backgroundColor: field.bg, color: field.fg }}
     >
-      <div className="p-5 sm:p-6">
-        <div className="flex items-center justify-between gap-3">
-          <h2 id="recovery-heading" className="text-sm font-medium text-stone-700 dark:text-stone-300">
-            Recovery
-          </h2>
-          {band && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-2.5 py-0.5 text-xs font-medium text-stone-800 dark:bg-stone-950/40 dark:text-stone-100">
-              <span aria-hidden className="h-2 w-2 rounded-full" style={{ backgroundColor: t[band.tone] }} />
-              {band.label}
-            </span>
-          )}
-        </div>
+      <h2 id="recovery-heading" className="font-condensed text-[2rem] uppercase leading-none">
+        <span className="font-black">Recovery</span>{" "}
+        <span className="font-light">{band ? band.label : "learning"}</span>
+      </h2>
 
-        {recovery === null || band === null ? (
-          <p className="mt-3 max-w-prose text-sm text-stone-600 dark:text-stone-400">
-            Not enough history yet. Recovery needs about a week of data to learn your normal.
+      {recovery === null || band === null ? (
+        <p className="mt-auto max-w-sm text-base">
+          Not enough history yet. Recovery needs about a week of data to learn your normal.
+        </p>
+      ) : (
+        <>
+          <p className="mt-1 font-condensed text-2xl font-light">out of 100</p>
+          {/* The score at poster scale, bleeding off the sleeve's right edge. */}
+          <p className="-mr-[0.07em] mt-auto self-end font-condensed text-[clamp(9.5rem,52vw,19rem)] font-black leading-[0.76] tracking-[-0.035em]">
+            <CountUp value={recovery} />
           </p>
-        ) : (
-          <>
-            <p className="mt-1 text-7xl font-semibold leading-none tracking-tight sm:text-8xl">
-              <CountUp value={recovery} />
-              <span className="ml-1 text-xl font-normal text-stone-500 sm:text-2xl">/100</span>
-            </p>
-            <div className="mt-4">
-              <Meter value={recovery} color={t[band.tone]} label="Recovery out of 100" size="md" />
-            </div>
-            {verdict && <p className="mt-4 max-w-prose text-base font-medium">{verdict}</p>}
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-              <p className="text-xs text-stone-600 dark:text-stone-400">
-                HRV, resting heart rate, sleep and breathing against your last 30 days.
-              </p>
-              <AskLink question={`Why is my recovery ${formatNumber(recovery)} on ${date}?`} label="Ask why" />
-            </div>
-          </>
-        )}
-      </div>
-      <WeekStrip date={date} />
+          {verdict && <p className="relative mt-5 max-w-md text-[17px] font-medium leading-snug">{verdict}</p>}
+          <div
+            className="relative mt-4 flex flex-wrap items-end justify-between gap-x-5 gap-y-2 pt-3 text-[13px]"
+            style={RULE}
+          >
+            <dl className="flex flex-wrap gap-x-5 gap-y-1">
+              {proofs
+                .filter((entry): entry is [string, string] => entry[1] !== null)
+                .map(([label, text]) => (
+                  <div key={label} className="flex gap-1.5">
+                    <dt className="font-semibold">{label}</dt>
+                    <dd>{text}</dd>
+                  </div>
+                ))}
+            </dl>
+            <AskLink question={`Why is my recovery ${formatNumber(recovery)} on ${data.date}?`} label="Ask why" onField />
+          </div>
+        </>
+      )}
     </section>
-  );
-}
-
-/** Last 7 days of recovery; each day opens that day. The selection slides between days. */
-function WeekStrip({ date }: { date: string }) {
-  const t = useChartTokens();
-  const start = addDays(date, -6);
-  const { data } = useDaily(start, date);
-  const recoveryByDay = new Map((data ?? []).map((row) => [row.date, row.scores.recovery ?? null]));
-  const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
-
-  return (
-    <nav aria-label="Recovery, last 7 days" className="mt-auto border-t border-stone-900/10 px-2 py-2 dark:border-white/10">
-      <ul className="grid grid-cols-7">
-        {days.map((day) => {
-          const value = recoveryByDay.get(day) ?? null;
-          const band = value === null ? null : recoveryBand(value);
-          const selected = day === date;
-          return (
-            <li key={day} className="relative">
-              {selected && (
-                <motion.span
-                  layoutId="week-selected"
-                  transition={BASE}
-                  aria-hidden
-                  className="absolute inset-0 rounded-lg bg-white shadow-sm ring-1 ring-stone-900/10 dark:bg-stone-800 dark:ring-white/10"
-                />
-              )}
-              <Link
-                to={`/?date=${day}`}
-                aria-current={selected ? "date" : undefined}
-                aria-label={`${formatWeekday(day)} ${day}: recovery ${value === null ? "not available" : `${formatNumber(value)}, ${band?.label}`}`}
-                className="relative flex min-h-11 flex-col items-center rounded-lg py-1.5 text-xs hover:bg-white/60 dark:hover:bg-stone-800/60"
-              >
-                <span className="text-stone-600 dark:text-stone-400">{formatWeekday(day)}</span>
-                <span className="text-sm font-semibold">{formatNumber(value)}</span>
-                <span
-                  aria-hidden
-                  className="mt-1 h-1 w-4 rounded-full"
-                  style={{ backgroundColor: band ? t[band.tone] : t.grid }}
-                />
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
   );
 }
 
 interface PillarProps {
   to: string;
-  label: string;
+  name: string;
+  field: Field;
   color: string;
   value: number | null;
   digits?: number;
-  unit: string;
   max: number;
+  aside?: string;
   target?: [number, number] | null;
-  detail?: string;
+  lines: string[];
 }
 
-/** Sleep or strain: the pillar's hue marks its dot and meter here and on its own page. */
-function Pillar({ to, label, color, value, digits = 0, unit, max, target, detail }: PillarProps) {
+/** A small sleeve (the score on its field) beside its reading: meter, target, detail. */
+function Pillar({ to, name, field, color, value, digits = 0, max, aside, target, lines }: PillarProps) {
+  const id = `${name.toLowerCase()}-heading`;
   return (
-    <Link
-      to={to}
-      className={`${SURFACE} group block p-5 transition-colors hover:border-stone-300 dark:hover:border-stone-700`}
-    >
-      <div className="flex items-center justify-between">
-        <span className="flex items-center gap-2 text-sm font-medium text-stone-700 dark:text-stone-300">
-          <span aria-hidden className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-          {label}
+    <section aria-labelledby={id} className="grid grid-cols-[8.5rem_minmax(0,1fr)] gap-5 sm:grid-cols-[11rem_minmax(0,1fr)]">
+      <Link
+        to={to}
+        aria-label={`${name}: ${value === null ? "no score" : `${formatNumber(value, digits)} out of ${max}`}. Open the ${name} page`}
+        className="relative flex aspect-square flex-col overflow-hidden p-3 transition-transform duration-150 hover:-translate-y-0.5"
+        style={{ backgroundColor: field.bg, color: field.fg }}
+      >
+        <span className="font-condensed text-lg font-black uppercase leading-none">{name}</span>
+        <span className="font-condensed text-sm font-light">/{max}</span>
+        <span className="-mr-[0.06em] mt-auto self-end font-condensed text-[4.6rem] font-black leading-[0.78] tracking-[-0.03em] sm:text-[6rem]">
+          {value === null ? "—" : <CountUp value={value} digits={digits} />}
         </span>
-        <ChevronRight className="h-4 w-4 text-stone-400 transition-transform group-hover:translate-x-0.5" />
+      </Link>
+      <div className="flex min-w-0 flex-col gap-2.5 pt-0.5">
+        <h2 id={id} className="font-condensed text-[1.75rem] uppercase leading-none">
+          <span className="font-extrabold">{name}</span> {aside && <span className="font-light">{aside}</span>}
+        </h2>
+        <Meter value={value} max={max} color={color} target={target} label={`${name} out of ${max}`} />
+        {lines.map((line) => (
+          <p key={line} className="text-sm text-stone-600 dark:text-stone-400">
+            {line}
+          </p>
+        ))}
+        <Link to={to} className="mt-auto inline-flex items-center gap-1 self-start text-sm font-semibold hover:underline">
+          Open {name.toLowerCase()} <ArrowRight className="h-4 w-4" />
+        </Link>
       </div>
-      <p className="mt-2 text-4xl font-semibold leading-none tracking-tight">
-        {value === null ? "—" : <CountUp value={value} digits={digits} />}
-        <span className="ml-1 text-base font-normal text-stone-500">{unit}</span>
-      </p>
-      <div className="mt-3">
-        <Meter value={value} max={max} color={color} target={target} label={`${label} out of ${max}`} />
-      </div>
-      {detail && <p className="mt-2 text-xs text-stone-600 dark:text-stone-400">{detail}</p>}
-    </Link>
+    </section>
   );
+}
+
+function strainLines(strain: number | null, target: [number, number] | null): string[] {
+  if (!target) return [];
+  if (strain === null) return [`Suggested today: ${target[0]}–${target[1]} (bracketed).`];
+  if (strain > target[1]) return [`Above today's suggested ${target[0]}–${target[1]}. Easy from here.`];
+  const low = Math.max(0, target[0] - strain);
+  const high = target[1] - strain;
+  return [
+    low === 0
+      ? `Inside today's suggested ${target[0]}–${target[1]}.`
+      : `Room for ${formatNumber(low, 1)}–${formatNumber(high, 1)} more today (bracketed range).`,
+  ];
 }
 
 function Flags({ flags }: { flags: string[] }) {
@@ -201,7 +192,7 @@ function Flags({ flags }: { flags: string[] }) {
   return (
     <section
       aria-labelledby="flags-heading"
-      className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-800/70 dark:bg-amber-950/60 dark:text-amber-50"
+      className="border-2 border-stone-900 bg-white p-4 text-sm dark:border-stone-100 dark:bg-stone-900"
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <h2 id="flags-heading" className="flex items-center gap-2 font-semibold">
@@ -215,37 +206,84 @@ function Flags({ flags }: { flags: string[] }) {
           <li key={flag}>{FLAG_TEXT[flag] ?? flag}</li>
         ))}
       </ul>
-      <p className="mt-2 text-xs text-amber-900 dark:text-amber-200">
+      <p className="mt-2 text-xs text-stone-600 dark:text-stone-400">
         Patterns in your own data, not a diagnosis. See a doctor if you feel unwell.
       </p>
     </section>
   );
 }
 
-/** The day in numbers: one hairline grid, not a row of cards. */
+/** The last 7 days as a shelf of thumbnail sleeves; the open day is outlined in cobalt. */
+function WeekShelf({ date }: { date: string }) {
+  const start = addDays(date, -6);
+  const { data } = useDaily(start, date);
+  const recoveryByDay = new Map((data ?? []).map((row) => [row.date, row.scores.recovery ?? null]));
+  const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
+
+  return (
+    <nav aria-labelledby="week-heading">
+      <h2 id="week-heading" className="section-title">
+        Last 7 days
+      </h2>
+      <ul className="grid grid-cols-7 gap-1.5 sm:gap-2">
+        {days.map((day) => {
+          const value = recoveryByDay.get(day) ?? null;
+          const band = value === null ? null : recoveryBand(value);
+          const field = band ? BAND_FIELD[band.tone] : EMPTY_FIELD;
+          const selected = day === date;
+          return (
+            <li key={day}>
+              <Link
+                to={`/?date=${day}`}
+                aria-current={selected ? "date" : undefined}
+                aria-label={`${formatWeekday(day)} ${day}: recovery ${value === null ? "not available" : `${formatNumber(value)}, ${band?.label}`}`}
+                className={`relative flex aspect-square flex-col overflow-hidden p-1.5 text-[11px] font-semibold transition-transform duration-150 hover:-translate-y-0.5 sm:p-2 sm:text-xs ${
+                  selected ? "outline outline-[3px] outline-offset-2 outline-cobalt" : ""
+                }`}
+                style={{ backgroundColor: field.bg, color: field.fg }}
+              >
+                {formatWeekday(day)}
+                <span className="-mr-[0.05em] mt-auto self-end font-condensed text-2xl font-black leading-[0.8] sm:text-4xl">
+                  {formatNumber(value)}
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+}
+
+/** The day in numbers: figures in the condensed voice under one ruled heading. */
 function DayStats({ data }: { data: TodayResponse }) {
   const stats: [string, string][] = [
     ...DAY_STATS.map((m): [string, string] => [metricDef(m).label, formatMetric(m, data.metrics[m])]),
     ["Stress", data.stress_avg === null ? "—" : `${formatNumber(data.stress_avg)} /100`],
   ];
   return (
-    <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-stone-200 bg-stone-200 sm:grid-cols-3 lg:grid-cols-6 dark:border-stone-800 dark:bg-stone-800">
-      {stats.map(([label, value]) => (
-        <div key={label} className="bg-white px-4 py-3 dark:bg-stone-900">
-          <dt className="text-xs text-stone-600 dark:text-stone-400">{label}</dt>
-          <dd className="mt-0.5 text-lg font-semibold">{value}</dd>
-        </div>
-      ))}
-    </dl>
+    <section aria-labelledby="day-heading">
+      <h2 id="day-heading" className="section-title">
+        Your day
+      </h2>
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+        {stats.map(([label, value]) => (
+          <div key={label}>
+            <dt className="text-xs text-stone-600 dark:text-stone-400">{label}</dt>
+            <dd className="font-condensed text-[1.9rem] font-extrabold leading-tight">{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
   );
 }
 
 function zWords(z: number | null | undefined): string {
   if (z === null || z === undefined) return "—";
-  if (z >= 2) return "↑ Well above";
-  if (z >= 1) return "↑ Above";
-  if (z <= -2) return "↓ Well below";
-  if (z <= -1) return "↓ Below";
+  if (z >= 2) return "Well above";
+  if (z >= 1) return "Above";
+  if (z <= -2) return "Well below";
+  if (z <= -1) return "Below";
   return "Normal";
 }
 
@@ -262,10 +300,10 @@ function Breakdown({
     (entry): entry is [string, number] => entry[1] !== null,
   );
   return (
-    <section className={`${SURFACE} p-4`}>
+    <section className={`${PANEL} p-4`}>
       <h3 className="mb-3 text-sm font-semibold">{title}</h3>
       {entries.length === 0 ? (
-        <p className="text-sm text-stone-500">Not available for this day.</p>
+        <p className="text-sm text-stone-600 dark:text-stone-400">Not available for this day.</p>
       ) : (
         <ul className="space-y-2.5">
           {entries.map(([key, value]) => (
@@ -294,15 +332,17 @@ function BaselineTable({ data }: { data: TodayResponse }) {
     },
   );
   return (
-    <section className={`${SURFACE} p-4`}>
+    <section className={`${PANEL} p-4`}>
       <h3 className="mb-2 text-sm font-semibold">Compared with your normal</h3>
       <DataTable data={{ columns: ["Metric", "Today", "Your normal range", "Status"], rows }} />
     </section>
   );
 }
 
+const TWO_COLUMNS =
+  "grid gap-8 lg:grid-cols-[minmax(0,30rem)_minmax(0,1fr)] xl:grid-cols-[minmax(0,32.5rem)_minmax(0,1fr)]";
+
 export default function TodayPage() {
-  const t = useChartTokens();
   const [date] = useSelectedDate();
   const { data, error, isLoading } = useToday(date);
 
@@ -312,58 +352,64 @@ export default function TodayPage() {
 
   const sleepJson = data.components.sleep;
   const target = data.strain_target;
+  const asleep = proof(data, "sleep_min");
+
   return (
     <div className="max-w-6xl">
-      <h1 className="mb-4 text-2xl font-semibold tracking-tight">Today</h1>
+      <h1 className="page-title">Today</h1>
       <DateNav shownDate={data.date} />
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <RecoveryPanel recovery={data.recovery} date={data.date} />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+      <div className={TWO_COLUMNS}>
+        <RecoverySleeve data={data} />
+        <div className="grid content-start gap-7">
           <Pillar
             to={`/sleep?date=${data.date}`}
-            label="Sleep"
-            color={t.sleep}
+            name="Sleep"
+            field={SLEEP_FIELD}
+            color="var(--sleep)"
             value={data.sleep_perf}
-            unit="/100"
             max={100}
-            detail={sleepJson?.asleep_min ? `${formatMinutes(sleepJson.asleep_min)} asleep` : undefined}
+            aside={sleepJson?.asleep_min ? `${formatMinutes(sleepJson.asleep_min)} asleep` : undefined}
+            lines={[asleep ? `Time asleep ${asleep}` : "No sleep recorded for last night."]}
           />
           <Pillar
             to={`/activity?date=${data.date}`}
-            label="Strain"
-            color={t.strain}
+            name="Strain"
+            field={STRAIN_FIELD}
+            color="var(--strain)"
             value={data.strain}
             digits={1}
-            unit="/21"
             max={21}
+            aside={target ? `suggested ${target[0]}–${target[1]}` : undefined}
             target={target}
-            detail={target ? `Suggested today: ${target[0]}–${target[1]} (shaded)` : undefined}
+            lines={strainLines(data.strain, target)}
           />
+          {data.flags.length > 0 && <Flags flags={data.flags} />}
         </div>
       </div>
 
-      <div className="mt-4 grid gap-4">
-        {data.flags.length > 0 && <Flags flags={data.flags} />}
+      <div className={`mt-12 ${TWO_COLUMNS}`}>
+        <WeekShelf date={data.date} />
+        <DayStats data={data} />
+      </div>
+
+      <div className="mt-12">
         <BriefCard date={data.date} />
       </div>
 
-      <section aria-labelledby="day-heading" className="mt-10">
-        <SectionHeading id="day-heading">Your day</SectionHeading>
-        <DayStats data={data} />
-      </section>
-
-      <section aria-labelledby="behind-heading" className="mt-10">
-        <SectionHeading id="behind-heading">Behind the scores</SectionHeading>
-        <div className="grid gap-4 lg:grid-cols-2">
+      <section aria-labelledby="behind-heading" className="mt-12">
+        <h2 id="behind-heading" className="section-title">
+          Behind the scores
+        </h2>
+        <div className="grid gap-6 lg:grid-cols-2">
           <BaselineTable data={data} />
-          <div className="grid content-start gap-4">
+          <div className="grid content-start gap-6">
             <Breakdown
               title="Recovery breakdown"
-              color={t["ink-2"]}
+              color="var(--series-1)"
               components={data.components.recovery?.components}
             />
-            <Breakdown title="Sleep breakdown" color={t.sleep} components={sleepJson?.components} />
+            <Breakdown title="Sleep breakdown" color="var(--sleep)" components={sleepJson?.components} />
           </div>
         </div>
       </section>

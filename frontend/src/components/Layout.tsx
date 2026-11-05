@@ -9,15 +9,23 @@ import CommandPalette from "./CommandPalette.tsx";
 import StatusBanner from "./StatusBanner.tsx";
 import ThemeToggle from "./ThemeToggle.tsx";
 
+// The rail is the cobalt shell; the current page is the one item cut out in white.
 function navClass({ isActive }: { isActive: boolean }): string {
-  const base =
-    "relative flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors duration-150";
-  return isActive
-    ? `${base} text-stone-950 dark:text-white`
-    : `${base} text-stone-600 hover:bg-stone-200/70 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800/70 dark:hover:text-stone-100`;
+  const base = "relative flex items-center gap-2 whitespace-nowrap px-3 py-2 text-[15px] transition-colors duration-150";
+  return isActive ? `${base} font-semibold text-cobalt` : `${base} text-white/85 hover:bg-white/10 hover:text-white`;
 }
 
-const TONE_DOT: Record<string, string> = { sleep: "bg-sleep", strain: "bg-strain" };
+// Pillar dots, lightened so they read on cobalt.
+const TONE_DOT: Record<string, string> = { sleep: "bg-[#b9adff]", strain: "bg-strain" };
+
+function Brand({ className = "" }: { className?: string }) {
+  return (
+    <span className={`font-condensed text-[1.9rem] font-black uppercase leading-[0.85] ${className}`}>
+      Air
+      <span className="block font-light">Companion</span>
+    </span>
+  );
+}
 
 const IS_MAC = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
 const SHORTCUT = IS_MAC ? "⌘K" : "Ctrl K";
@@ -27,7 +35,7 @@ function SearchButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center justify-between rounded-md border border-stone-300 px-3 py-1.5 text-sm text-stone-500 hover:bg-stone-100 dark:border-stone-700 dark:hover:bg-stone-800"
+      className="flex w-full items-center justify-between border border-white/50 px-3 py-2 text-sm text-white/85 hover:bg-white/10"
     >
       <span>Search…</span>
       <kbd className="text-xs">{SHORTCUT}</kbd>
@@ -60,12 +68,12 @@ export default function Layout() {
         Skip to content
       </a>
 
-      <aside className="hidden border-r border-stone-200 bg-stone-100/70 md:sticky md:top-0 md:flex md:h-screen md:w-56 md:shrink-0 md:flex-col md:gap-3 md:overflow-y-auto md:px-2 md:py-4 dark:border-stone-800 dark:bg-stone-900/40">
-        <div className="px-2 text-lg font-semibold tracking-tight">Air Companion</div>
-        <div className="px-1">
+      <aside className="hidden bg-cobalt text-white md:sticky md:top-0 md:flex md:h-screen md:w-56 md:shrink-0 md:flex-col md:gap-4 md:overflow-y-auto md:px-4 md:py-6">
+        <Brand className="px-1" />
+        <div className="mt-2">
           <SearchButton onClick={() => setPaletteOpen(true)} />
         </div>
-        <nav aria-label="Main" className="flex flex-col gap-1">
+        <nav aria-label="Main" className="-mx-1 flex flex-col gap-0.5">
           {NAV_ITEMS.map((item) => (
             <NavLink key={item.path} to={item.path} end={item.path === "/"} className={navClass}>
               {({ isActive }) => (
@@ -76,7 +84,7 @@ export default function Layout() {
                       layoutId="nav-active"
                       transition={FAST}
                       aria-hidden
-                      className="absolute inset-0 rounded-md bg-white shadow-sm ring-1 ring-stone-900/10 dark:bg-stone-800 dark:ring-white/10"
+                      className="absolute inset-0 bg-white"
                     />
                   )}
                   <span className="relative">{item.label}</span>
@@ -88,18 +96,18 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
-        <div className="mt-auto px-1">
+        <div className="mt-auto">
           <ThemeToggle theme={theme} onChange={setTheme} />
         </div>
       </aside>
 
-      <header className="flex items-center justify-between gap-3 border-b border-stone-200 px-4 py-3 md:hidden dark:border-stone-800">
-        <span className="font-semibold tracking-tight">Air Companion</span>
+      <header className="flex items-center justify-between gap-3 bg-cobalt px-4 py-3 text-white md:hidden">
+        <Brand className="!text-[1.35rem]" />
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setPaletteOpen(true)}
-            className="rounded-md border border-stone-300 px-2 py-1 text-xs dark:border-stone-700"
+            className="min-h-8 border border-white/50 px-2.5 text-xs font-medium hover:bg-white/15"
           >
             Search
           </button>

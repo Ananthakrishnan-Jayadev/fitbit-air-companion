@@ -24,7 +24,7 @@ export default function BodyPage() {
   if (data.latest_date === null) {
     return (
       <section className="max-w-4xl">
-        <h1 className="mb-4 text-2xl font-semibold tracking-tight">Body</h1>
+        <h1 className="page-title">Body</h1>
         <p className="rounded-lg border border-dashed border-stone-300 p-8 text-center text-sm text-stone-600 dark:border-stone-700 dark:text-stone-400">
           No weigh-ins yet. Readings from your smart scale appear here once they reach Google
           Health (for Renpho: via Health Connect) and the next sync runs.
@@ -41,7 +41,7 @@ export default function BodyPage() {
     <section className="max-w-6xl">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Body</h1>
+          <h1 className="page-title !mb-1">Body</h1>
           <p className="text-sm text-stone-500">Last weigh-in: {formatDayLabel(data.latest_date)}</p>
         </div>
         <div className="flex overflow-hidden rounded-md border border-stone-300 dark:border-stone-700" role="group" aria-label="Range">
@@ -53,7 +53,7 @@ export default function BodyPage() {
               onClick={() => setDays(r)}
               className={`px-3 py-1 text-sm ${
                 r === days
-                  ? "bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900"
+                  ? "bg-cobalt text-white"
                   : "hover:bg-stone-100 dark:hover:bg-stone-800"
               }`}
             >

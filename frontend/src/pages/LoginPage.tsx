@@ -24,7 +24,9 @@ export default function LoginPage() {
         onSubmit={submit}
         className="w-full max-w-sm rounded-xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-800 dark:bg-stone-900"
       >
-        <h1 className="text-xl font-semibold tracking-tight">Fitbit Air Companion</h1>
+        <h1 className="font-condensed text-4xl font-black uppercase leading-none">
+          Air <span className="font-light">Companion</span>
+        </h1>
         <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">Enter the app password to continue.</p>
 
         <label htmlFor="password" className="mt-5 block text-sm font-medium">

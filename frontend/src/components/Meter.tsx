@@ -6,7 +6,7 @@ interface MeterProps {
   max?: number;
   color: string;
   label: string;
-  /** Optional target range drawn on the track (e.g. today's suggested strain). */
+  /** Optional target range drawn as a bracket on the track (e.g. today's suggested strain). */
   target?: [number, number] | null;
   size?: "sm" | "md";
 }
@@ -21,8 +21,8 @@ export default function Meter({ value, max = 100, color, label, target, size = "
   const fill = value === null ? 0 : pct(value, max);
   return (
     <div
-      className={`relative w-full overflow-hidden rounded-full bg-stone-200 dark:bg-stone-800 ${
-        size === "md" ? "h-2.5" : "h-1.5"
+      className={`relative w-full bg-stone-200 dark:bg-stone-800 ${
+        size === "md" ? "h-3" : "h-2"
       }`}
       role="meter"
       aria-label={label}
@@ -33,12 +33,13 @@ export default function Meter({ value, max = 100, color, label, target, size = "
       {target && (
         <div
           aria-hidden
-          className="absolute inset-y-0 bg-stone-400/60 dark:bg-stone-500/50"
+          // The target range: an ink bracket standing just proud of the bar.
+          className="absolute -inset-y-1 z-10 border-2 border-stone-900 dark:border-stone-100"
           style={{ left: `${pct(target[0], max)}%`, width: `${pct(target[1], max) - pct(target[0], max)}%` }}
         />
       )}
       <motion.div
-        className="relative h-full rounded-full"
+        className="relative h-full"
         style={{ backgroundColor: color }}
         initial={false}
         animate={{ width: `${fill}%` }}

@@ -131,7 +131,7 @@ export default function CoachPage() {
   return (
     <section className="flex max-w-3xl flex-col">
       <div className="mb-4 flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Coach</h1>
+        <h1 className="page-title !mb-0">Coach</h1>
         <button type="button" className={BUTTON_SECONDARY} onClick={newChat} disabled={sending}>
           New chat
         </button>

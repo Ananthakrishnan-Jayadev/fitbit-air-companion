@@ -17,7 +17,7 @@ export default function TrendsPage() {
 
   return (
     <section className="max-w-6xl">
-      <h1 className="mb-4 text-2xl font-semibold tracking-tight">Trends</h1>
+      <h1 className="page-title">Trends</h1>
 
       {/* One filter row for the page. */}
       <div className="mb-6 flex flex-wrap items-center gap-3">
@@ -42,7 +42,7 @@ export default function TrendsPage() {
               onClick={() => update({ days: r })}
               className={`px-3 py-1 text-sm ${
                 r === days
-                  ? "bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900"
+                  ? "bg-cobalt text-white"
                   : "hover:bg-stone-100 dark:hover:bg-stone-800"
               }`}
             >

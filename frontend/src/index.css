@@ -3,54 +3,65 @@
 @tailwind utilities;
 
 /*
- * Colour roles (design.md "Colour"). Neutrals are warm (Tailwind stone) to match the chart
- * tokens. Hue is reserved for meaning:
- *   - status (good / warning / serious / critical): recovery bands and flags, always labelled
- *   - pillars: sleep (violet) and strain (teal) keep their hue on every page
- *   - series-1 (blue): any other single-series chart
- * Pillar and status hues are used for marks (dots, bars, lines, tints), never for body text.
+ * Blue Note Sleeve (design.md). Colour roles:
+ *   - cobalt: the shell (nav rail) and the one reserved accent for today / selected / focus
+ *   - fields: recovery band (good / warning / critical), sleep (indigo), strain (orange).
+ *     Flat, never gradients; text on a field uses its --on-* colour; always labelled.
+ *   - ink: every other chart series and all structure; past/other series recede to hairlines
+ * Neutrals are the remapped `stone` ramp in tailwind.config.ts.
  */
 :root {
-  --surface-1: #fcfcfb;
-  --ink-1: #0b0b0b;
-  --ink-2: #52514e;
-  --ink-muted: #898781;
-  --grid: #e1e0d9;
-  --axis: #c3c2b7;
-  --series-1: #2a78d6;
-  --series-1-wash: rgba(42, 120, 214, 0.1);
-  /* Ordinal blue ramp (steps 250-600) for ordered categories such as activity level. */
-  --seq-250: #86b6ef;
-  --seq-350: #5598e7;
-  --seq-450: #2a78d6;
-  --seq-600: #184f95;
-  /* Pillars. */
-  --sleep: #6650d0;
-  --sleep-wash: rgba(102, 80, 208, 0.12);
-  --strain: #0b7f8c;
-  --strain-wash: rgba(11, 127, 140, 0.12);
-  /* Status: always shown with a text label, never color alone. */
-  --good: #0ca30c;
-  --warning: #fab219;
-  --serious: #ec835a;
-  --critical: #d03b3b;
+  --cobalt: #1f3fd1;
+  --cobalt-ink: #ffffff;
+  --surface-1: #ffffff;
+  --ink-1: #111111;
+  --ink-2: #3d3c39;
+  --ink-muted: #6f6e68;
+  --grid: #e4e3dd;
+  --axis: #c3c2ba;
+  --series-1: #111111;
+  --series-1-wash: rgba(17, 17, 17, 0.07);
+  /* Ordinal ramp (activity level): the strain field from pale to full. */
+  --seq-250: #f7c9a3;
+  --seq-350: #f3a466;
+  --seq-450: #ef7a1e;
+  --seq-600: #a8500c;
+  /* Pillar fields. */
+  --sleep: #3a2bb0;
+  --sleep-wash: rgba(58, 43, 176, 0.1);
+  --on-sleep: #ffffff;
+  --strain: #ef7a1e;
+  --strain-wash: rgba(239, 122, 30, 0.14);
+  --on-strain: #111111;
+  /* Status fields: always shown with a text label, never colour alone. */
+  --good: #1f6f4a;
+  --on-good: #ffffff;
+  --warning: #e0a21a;
+  --on-warning: #111111;
+  --serious: #e26a2c;
+  --critical: #c8402a;
+  --on-critical: #ffffff;
 }
 
 /* Dark tokens follow the `dark` class (see src/theme.ts), not the media query directly. */
 :root.dark {
   color-scheme: dark;
-  --surface-1: #1a1a19;
-  --ink-1: #f0efec;
-  --ink-2: #c3c2b7;
-  --ink-muted: #898781;
-  --grid: #2c2c2a;
-  --axis: #383835;
-  --series-1: #3987e5;
-  --series-1-wash: rgba(57, 135, 229, 0.12);
-  --sleep: #9d8df0;
-  --sleep-wash: rgba(157, 141, 240, 0.14);
-  --strain: #3fb6c2;
-  --strain-wash: rgba(63, 182, 194, 0.14);
+  --cobalt: #2a49e0;
+  --surface-1: #18181b;
+  --ink-1: #f2f1ec;
+  --ink-2: #c3c2ba;
+  --ink-muted: #9a9992;
+  --grid: #2a2a2c;
+  --axis: #3d3c39;
+  --series-1: #f2f1ec;
+  --series-1-wash: rgba(242, 241, 236, 0.08);
+  --sleep: #5a48d6;
+  --sleep-wash: rgba(124, 108, 240, 0.16);
+  --strain: #f0842b;
+  --strain-wash: rgba(240, 132, 43, 0.16);
+  --good: #23805a;
+  --warning: #e3a826;
+  --critical: #d4482f;
 }
 
 :root:not(.dark) {
@@ -60,22 +71,63 @@
 body {
   @apply bg-stone-50 text-stone-900 antialiased dark:bg-stone-950 dark:text-stone-100;
   font-variant-numeric: tabular-nums;
-  caret-color: var(--series-1);
+  caret-color: var(--cobalt);
   scrollbar-color: var(--axis) transparent;
 }
 
 ::selection {
-  background-color: var(--series-1-wash);
-  color: inherit;
+  background-color: var(--cobalt);
+  color: var(--cobalt-ink);
 }
 
 /* Keyboard focus is always visible; mouse clicks don't show the ring. */
 :focus-visible {
-  outline: 2px solid var(--series-1);
+  outline: 2px solid var(--cobalt);
   outline-offset: 2px;
-  border-radius: 4px;
 }
 
 a {
   text-underline-offset: 3px;
+}
+
+/* On the cobalt shell the reserved accent is the ground, so focus turns white. */
+.bg-cobalt :focus-visible {
+  outline-color: #ffffff;
+}
+
+@layer components {
+  /* Reid Miles voice: condensed, black, upper case; the light weight carries the aside. */
+  .page-title {
+    font-stretch: 62%;
+    font-weight: 900;
+    text-transform: uppercase;
+    font-size: 2.75rem;
+    line-height: 1;
+    letter-spacing: -0.005em;
+    margin-bottom: 1.25rem;
+  }
+  .page-title em {
+    font-style: normal;
+    font-weight: 300;
+  }
+  /* Section openers: a 2px ink rule, then a condensed heading. */
+  .section-title {
+    border-top: 2px solid currentColor;
+    padding-top: 0.5rem;
+    margin-bottom: 1rem;
+    font-stretch: 62%;
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 1.625rem;
+    line-height: 1.1;
+  }
+}
+
+@layer utilities {
+  .font-condensed {
+    font-stretch: 62%;
+  }
+  .font-semicondensed {
+    font-stretch: 80%;
+  }
 }

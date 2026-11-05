@@ -26,3 +26,6 @@ data/
 # Local AI tool settings and skills
 .claude/
 .opencode/
+
+# Impeccable decision sketches (development only)
+.impeccable/mocks/

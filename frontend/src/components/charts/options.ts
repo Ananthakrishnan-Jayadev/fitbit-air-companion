@@ -7,7 +7,7 @@ import type {
 } from "echarts";
 import type { ChartTokens } from "./tokens.ts";
 
-export const FONT = 'system-ui, -apple-system, "Segoe UI", sans-serif';
+export const FONT = '"Archivo Variable", system-ui, -apple-system, "Segoe UI", sans-serif';
 
 export function grid(): GridComponentOption {
   return { left: 8, right: 16, top: 16, bottom: 8, containLabel: true };

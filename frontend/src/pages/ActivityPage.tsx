@@ -118,7 +118,7 @@ export default function ActivityPage() {
 
   return (
     <section className="max-w-6xl">
-      <h1 className="mb-4 flex items-center gap-2.5 text-2xl font-semibold tracking-tight">
+      <h1 className="page-title flex items-center gap-3">
         <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-strain" />
         Activity
       </h1>
@@ -172,7 +172,7 @@ export default function ActivityPage() {
       </div>
 
       <section className="mt-4 rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
-        <h2 className="mb-2 text-sm font-semibold">Workouts</h2>
+        <h2 className="mb-3 font-condensed text-[1.35rem] font-extrabold uppercase leading-none">Workouts</h2>
         {data.workouts.length === 0 ? (
           <p className="text-sm text-stone-500">No workouts recorded.</p>
         ) : (

@@ -23,7 +23,7 @@ export default function SettingsPage() {
 
   return (
     <section className="max-w-4xl">
-      <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+      <h1 className="page-title">Settings</h1>
 
       {(authError || connected) && (
         <div

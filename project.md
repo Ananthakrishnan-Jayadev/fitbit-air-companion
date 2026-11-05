@@ -47,6 +47,7 @@ _Last updated: 2026-10-29_
 | Charts | **Apache ECharts** (`echarts-for-react`) | Handles large intraday series (tens of thousands of points) |
 | Animation | **Motion** (`motion/react`) | Enter/layout animations, count-ups; honours reduced motion (Phase 6, design.md) |
 | Styling | **Tailwind CSS** | |
+| Typeface | **Archivo** (`@fontsource-variable/archivo`, OFL) | Bundled by Vite and served by the app (no font CDN); width axis gives the condensed display voice (design.md, Phase 8) |
 | Python tooling | `venv` + `pip install -e .`, **ruff**, **pytest** | |
 | JS tooling | npm, ESLint | No JS test runner; **pytest is the only test framework** (see CLAUDE.md) |
 

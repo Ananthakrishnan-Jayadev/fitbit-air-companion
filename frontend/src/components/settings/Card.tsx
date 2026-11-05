@@ -15,7 +15,7 @@ export function StatusDot({ tone }: { tone: Tone }) {
 export function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
-      <h2 className="mb-3 text-base font-semibold">{title}</h2>
+      <h2 className="mb-3 font-condensed text-[1.35rem] font-extrabold uppercase leading-none">{title}</h2>
       {children}
     </section>
   );

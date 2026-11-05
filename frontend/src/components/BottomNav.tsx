@@ -19,7 +19,7 @@ const MORE = [
 
 function tabClass({ isActive }: { isActive: boolean }): string {
   return `relative flex min-h-12 flex-1 flex-col items-center justify-center text-xs font-medium ${
-    isActive ? "text-stone-900 dark:text-white" : "text-stone-500 dark:text-stone-400"
+    isActive ? "font-semibold text-stone-900 dark:text-white" : "text-stone-600 dark:text-stone-400"
   }`;
 }
 
@@ -67,7 +67,7 @@ export default function BottomNav() {
                     layoutId="tab-active"
                     transition={FAST}
                     aria-hidden
-                    className="absolute inset-x-4 top-0 h-0.5 rounded-full bg-stone-900 dark:bg-white"
+                    className="absolute inset-x-3 top-0 h-[3px] bg-cobalt"
                   />
                 )}
                 {item.label}

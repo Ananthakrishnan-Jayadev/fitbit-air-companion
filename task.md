@@ -221,6 +221,18 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done
 - [ ] **You:** build, lint, test; check Today/Heart/Trends on phone and laptop, both themes,
       and with reduce motion on
 
+## Phase 8: visual overhaul ("Blue Note Sleeve")
+- [x] Direction chosen on the Impeccable decision page (roll: Blue Note sleeves; contract in
+      `.impeccable/surfaces/`)
+- [x] Bundled Archivo (width axis), square corners, cobalt shell rail, remapped neutrals,
+      flat ink fields for recovery band / sleep / strain, cobalt as the one "today/selected" accent
+- [x] Today as sleeves: recovery sleeve (phone: owns the first screen), sleep/strain sleeves
+      with meters and target bracket, 7-day shelf, "Your day", proof lines vs normal
+- [x] Condensed upper-case voice for page titles, section and card headings, stat figures
+- [ ] **You:** `npm --prefix frontend install`, build, lint; check every page in both themes,
+      phone and laptop
+- [ ] Finish review (screenshots + reviewer) and DESIGN.md from the built world
+
 ## Possible next steps
 - [ ] Brief accuracy: give the model precomputed comparisons (e.g. strain vs yesterday) and
       check that every number in a brief appears in its input data

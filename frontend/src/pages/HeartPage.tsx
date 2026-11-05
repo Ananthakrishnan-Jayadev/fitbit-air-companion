@@ -24,7 +24,7 @@ export default function HeartPage() {
 
   return (
     <section className="max-w-6xl">
-      <h1 className="mb-4 text-2xl font-semibold tracking-tight">Heart</h1>
+      <h1 className="page-title">Heart</h1>
       <DateNav shownDate={data.date} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -40,7 +40,7 @@ export default function HeartPage() {
 
       {data.zones.length > 0 && (
         <section className="mt-4 rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
-          <h2 className="mb-2 text-sm font-semibold">Your heart-rate zones (from Google)</h2>
+          <h2 className="mb-3 font-condensed text-[1.35rem] font-extrabold uppercase leading-none">Your heart-rate zones (from Google)</h2>
           <ul className="grid gap-1 text-sm sm:grid-cols-2">
             {data.zones.map((z) => (
               <li key={z.zone} className="flex justify-between gap-4">

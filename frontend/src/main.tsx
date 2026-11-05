@@ -5,6 +5,8 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { isUnauthorized } from "./api/client.ts";
 import App from "./App.tsx";
+// Bundled locally by Vite (no font CDN): Archivo with weight and width axes.
+import "@fontsource-variable/archivo/standard.css";
 import "./index.css";
 import { applyTheme, storedTheme } from "./theme.ts";
 
