@@ -22,3 +22,7 @@ data/
 .vscode/
 .idea/
 .DS_Store
+
+# Local AI tool settings and skills
+.claude/
+.opencode/
