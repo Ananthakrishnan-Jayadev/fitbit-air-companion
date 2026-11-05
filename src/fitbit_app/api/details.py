@@ -331,8 +331,9 @@ def _offset_min(clock: DayClock, day: dt.date) -> int:
 
 
 def _epoch_ms(values: pd.Series | pd.DatetimeIndex) -> np.ndarray:
-    index = pd.DatetimeIndex(values)
-    return (index.asi8 // 1_000_000).astype(np.int64)
+    # Convert the unit explicitly: pandas 3 stores datetimes in microseconds, not nanoseconds.
+    index = pd.DatetimeIndex(values).as_unit("ms")
+    return index.asi8.astype(np.int64)
 
 
 def _series(frame: pd.DataFrame, column: str, points: int) -> Series:

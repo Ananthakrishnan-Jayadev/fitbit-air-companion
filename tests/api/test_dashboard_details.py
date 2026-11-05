@@ -102,7 +102,9 @@ def test_heart(scored: TestClient) -> None:
     assert body["min_bpm"] < body["max_bpm"]
     assert body["utc_offset_min"] == 0
     assert body["zones"] == []  # no raw zone data in the synthetic set
-
+    # Epoch milliseconds, i.e. within the requested day (not seconds or microseconds).
+    day_start = dt.datetime.combine(LAST, dt.time(), tzinfo=dt.UTC).timestamp() * 1000
+    assert all(day_start - 86_400_000 <= t <= day_start + 2 * 86_400_000 for t in timestamps)
 
 
 def test_heart_window_returns_only_that_span(scored: TestClient) -> None:
@@ -127,6 +129,7 @@ def test_heart_window_outside_the_day_is_empty(scored: TestClient) -> None:
 @pytest.mark.parametrize("query", ["start_ms=1000", "end_ms=1000", "start_ms=2000&end_ms=1000"])
 def test_heart_window_validation(scored: TestClient, query: str) -> None:
     assert scored.get(f"/api/heart?date={LAST}&{query}").status_code == 422
+
 
 def test_sleep(scored: TestClient) -> None:
     body = scored.get(f"/api/sleep?date={LAST}").json()

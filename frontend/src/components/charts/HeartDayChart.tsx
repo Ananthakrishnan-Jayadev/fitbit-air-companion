@@ -108,7 +108,6 @@ export default function HeartDayChart({ data }: { data: HeartResponse }) {
           },
           handleStyle: { color: t["surface-1"], borderColor: t["ink-muted"] },
           moveHandleStyle: { color: t.axis },
-          emphasis: { handleStyle: { borderColor: t["series-1"] } },
           textStyle: { color: t["ink-muted"] },
           labelFormatter: (value: number) => timeLabel(value),
           brushSelect: true,

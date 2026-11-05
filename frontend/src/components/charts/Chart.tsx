@@ -11,6 +11,7 @@ import {
 import * as echarts from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import ReactEChartsCore from "echarts-for-react/lib/core";
+import type { EChartsReactProps } from "echarts-for-react/lib/types";
 import { useReducedMotion } from "motion/react";
 import { useMemo } from "react";
 
@@ -27,7 +28,8 @@ echarts.use([
   CanvasRenderer,
 ]);
 
-export type ChartInstance = echarts.ECharts;
+// The instance type as echarts-for-react declares it (it bundles its own echarts typings).
+export type ChartInstance = Parameters<NonNullable<EChartsReactProps["onChartReady"]>>[0];
 
 interface ChartProps {
   option: EChartsOption;
