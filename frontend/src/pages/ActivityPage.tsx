@@ -1,6 +1,6 @@
 import type { EChartsOption } from "echarts";
 import type { ActivityResponse } from "../api/types.ts";
-import ChartCard, { DataTable } from "../components/ChartCard.tsx";
+import ChartCard from "../components/ChartCard.tsx";
 import Chart from "../components/charts/Chart.tsx";
 import {
   axisTooltip,
@@ -14,6 +14,7 @@ import {
 } from "../components/charts/options.ts";
 import { useChartTokens, type ChartTokens } from "../components/charts/tokens.ts";
 import DateNav from "../components/DateNav.tsx";
+import { Page, Panel, WithAside } from "../components/PageLayout.tsx";
 import { LoadError, Loading } from "../components/PageState.tsx";
 import StatTile from "../components/StatTile.tsx";
 import { formatClock, formatMinutes, formatNumber } from "../format.ts";
@@ -116,15 +117,53 @@ export default function ActivityPage() {
   if (error) return <LoadError error={error} />;
   if (!data) return null;
 
+  const workouts = (
+    <Panel title="Workouts">
+      {data.workouts.length === 0 ? (
+        <p className="text-sm text-stone-600 dark:text-stone-400">No workouts recorded this day.</p>
+      ) : (
+        <ul className="divide-y divide-stone-200 dark:divide-stone-800">
+          {data.workouts.map((w) => (
+            <li key={w.start} className="py-3 first:pt-0 last:pb-0">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="font-condensed text-xl font-bold capitalize leading-tight">
+                  {w.activity_type.replaceAll("_", " ").toLowerCase()}
+                </span>
+                <span className="text-sm text-stone-600 dark:text-stone-400">{formatClock(w.start)}</span>
+              </div>
+              <dl className="mt-1 grid grid-cols-3 gap-2 text-sm">
+                {(
+                  [
+                    ["Time", formatMinutes(w.duration_min)],
+                    ["Avg HR", w.avg_hr === null ? "—" : `${formatNumber(w.avg_hr)} bpm`],
+                    ["Max HR", w.max_hr === null ? "—" : `${formatNumber(w.max_hr)} bpm`],
+                    ["Calories", w.calories === null ? "—" : `${formatNumber(w.calories)} kcal`],
+                    ["Distance", formatMetric("distance_m", w.distance_m)],
+                  ] as [string, string][]
+                ).map(([label, value]) => (
+                  <div key={label}>
+                    <dt className="text-xs text-stone-600 dark:text-stone-400">{label}</dt>
+                    <dd className="font-medium">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
+  );
+
   return (
-    <section className="max-w-6xl">
+    <Page>
       <h1 className="page-title flex items-center gap-3">
         <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-strain" />
         Activity
       </h1>
       <DateNav shownDate={data.date} />
 
-      <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-6">
+      <WithAside label="Workouts" aside={workouts}>
+      <div className="grid gap-4 sm:grid-cols-3 2xl:grid-cols-6">
         {TOTALS.map((m) => (
           <StatTile key={m} label={metricDef(m).label} value={formatMetric(m, data.totals[m])} />
         ))}
@@ -171,27 +210,7 @@ export default function ActivityPage() {
         </ChartCard>
       </div>
 
-      <section className="mt-4 rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
-        <h2 className="mb-3 font-condensed text-[1.35rem] font-extrabold uppercase leading-none">Workouts</h2>
-        {data.workouts.length === 0 ? (
-          <p className="text-sm text-stone-500">No workouts recorded.</p>
-        ) : (
-          <DataTable
-            data={{
-              columns: ["Start", "Type", "Duration", "Avg HR", "Max HR", "Calories", "Distance"],
-              rows: data.workouts.map((w) => [
-                formatClock(w.start),
-                w.activity_type.replaceAll("_", " ").toLowerCase(),
-                formatMinutes(w.duration_min),
-                formatNumber(w.avg_hr),
-                formatNumber(w.max_hr),
-                formatNumber(w.calories),
-                formatMetric("distance_m", w.distance_m),
-              ]),
-            }}
-          />
-        )}
-      </section>
-    </section>
+      </WithAside>
+    </Page>
   );
 }

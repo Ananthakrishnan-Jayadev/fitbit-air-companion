@@ -232,6 +232,9 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done
 - [ ] **You:** `npm --prefix frontend install`, build, lint; check every page in both themes,
       phone and laptop
 - [ ] Finish review (screenshots + reviewer) and DESIGN.md from the built world
+- [x] Wide screens: pages to 1600px, context side panels (`PageLayout`), taller charts,
+      Trends stats + related metrics, three-column Today at 2xl, Journal/Settings two columns
+- [ ] **You:** check every page on the 1920px monitor, a laptop width and a phone width
 
 ## Possible next steps
 - [ ] Brief accuracy: give the model precomputed comparisons (e.g. strain vs yesterday) and

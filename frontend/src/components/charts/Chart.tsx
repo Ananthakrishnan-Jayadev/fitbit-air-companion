@@ -13,7 +13,7 @@ import { CanvasRenderer } from "echarts/renderers";
 import ReactEChartsCore from "echarts-for-react/lib/core";
 import type { EChartsReactProps } from "echarts-for-react/lib/types";
 import { useReducedMotion } from "motion/react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 // Only the pieces we use, to keep the bundle small.
 echarts.use([
@@ -58,8 +58,31 @@ function withStableIds(option: EChartsOption): EChartsOption {
   return { ...option, series: series.map((s, i) => ({ ...s, id: s.id ?? `s${i}` })) };
 }
 
+// `height` is the laptop size; wide screens get taller charts instead of wide, flat strips.
+const TALLER: [string, number][] = [
+  ["(min-width: 1536px)", 1.4],
+  ["(min-width: 1280px)", 1.2],
+];
+
+function scaleForWidth(): number {
+  if (typeof window === "undefined") return 1;
+  return TALLER.find(([query]) => window.matchMedia(query).matches)?.[1] ?? 1;
+}
+
+function useHeightScale(): number {
+  const [scale, setScale] = useState(scaleForWidth);
+  useEffect(() => {
+    const lists = TALLER.map(([query]) => window.matchMedia(query));
+    const update = () => setScale(scaleForWidth());
+    lists.forEach((list) => list.addEventListener("change", update));
+    return () => lists.forEach((list) => list.removeEventListener("change", update));
+  }, []);
+  return scale;
+}
+
 export default function Chart({ option, label, height = 240, onReady, onEvents }: ChartProps) {
   const reduce = useReducedMotion();
+  const scale = useHeightScale();
   const merged = useMemo<EChartsOption>(
     () => ({ ...MOTION, ...withStableIds(option), animation: !reduce }),
     [option, reduce],
@@ -71,7 +94,7 @@ export default function Chart({ option, label, height = 240, onReady, onEvents }
         option={merged}
         // Series not in the new option are removed; the rest update (and animate) in place.
         replaceMerge={["series"]}
-        style={{ height, width: "100%" }}
+        style={{ height: Math.round(height * scale), width: "100%" }}
         opts={{ renderer: "canvas" }}
         onChartReady={onReady}
         onEvents={onEvents}

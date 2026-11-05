@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import type { JournalEntry, Outcome, TagEffect } from "../api/types.ts";
 import { DataTable } from "../components/ChartCard.tsx";
+import { Page } from "../components/PageLayout.tsx";
 import { ChevronLeft, ChevronRight } from "../components/icons.tsx";
 import { BUTTON, BUTTON_SECONDARY, INPUT } from "../components/settings/Card.tsx";
 import { addDays, formatDayLabel, formatNumber, localTodayIso } from "../format.ts";
@@ -177,7 +178,7 @@ export default function JournalPage() {
   const allTags = (tags.data ?? []).map((t) => t.tag);
 
   return (
-    <section className="max-w-4xl">
+    <Page>
       <h1 className="page-title">Journal</h1>
       <div className="mb-6 flex flex-wrap items-center gap-2">
         <button type="button" className={BUTTON_SECONDARY} onClick={() => setDate(addDays(date, -1))} aria-label="Previous day">
@@ -202,17 +203,17 @@ export default function JournalPage() {
         </button>
       </div>
 
-      {journal.isLoading || tags.isLoading ? (
-        <p className="text-sm text-stone-500">Loading…</p>
-      ) : (
-        <EntryEditor key={`${date}:${entry?.tags.join(",") ?? ""}:${entry?.note ?? ""}`} date={date} entry={entry} allTags={allTags} />
-      )}
-
-      <div className="mt-4">
+      {/* Writing today's entry and reading what the entries add up to, side by side. */}
+      <div className="grid items-start gap-6 xl:grid-cols-2">
+        {journal.isLoading || tags.isLoading ? (
+          <p className="text-sm text-stone-500">Loading…</p>
+        ) : (
+          <EntryEditor key={`${date}:${entry?.tags.join(",") ?? ""}:${entry?.note ?? ""}`} date={date} entry={entry} allTags={allTags} />
+        )}
         <WhatAffectsYou />
       </div>
 
-      <section className="mt-4 rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
+      <section className="mt-8 rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
         <h2 className="mb-3 font-condensed text-[1.35rem] font-extrabold uppercase leading-none">Last {HISTORY_DAYS} days</h2>
         {entries.length === 0 ? (
           <p className="text-sm text-stone-500">No entries yet.</p>
@@ -225,6 +226,6 @@ export default function JournalPage() {
           />
         )}
       </section>
-    </section>
+    </Page>
   );
 }

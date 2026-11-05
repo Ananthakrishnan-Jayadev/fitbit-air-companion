@@ -14,6 +14,7 @@ import {
 } from "../components/charts/options.ts";
 import { useChartTokens, type ChartTokens } from "../components/charts/tokens.ts";
 import DateNav from "../components/DateNav.tsx";
+import { Page, Panel, WithAside } from "../components/PageLayout.tsx";
 import { LoadError, Loading } from "../components/PageState.tsx";
 import StatTile from "../components/StatTile.tsx";
 import { addDays, formatClock, formatMinutes, formatNumber } from "../format.ts";
@@ -130,14 +131,30 @@ export default function SleepPage() {
 
   const night = data.night;
   const asleep = data.components.asleep_min;
+  const history = (
+    <Panel title="Last 14 nights">
+      <DataTable
+        data={{
+          columns: ["Night", "Bed – wake", "Asleep", "Score"],
+          rows: [...(recent.data ?? [])].reverse().map((n) => [
+            n.date.slice(5),
+            `${n.bedtime_local}–${n.wake_local}`,
+            formatMinutes(n.asleep_min),
+            formatNumber(n.score),
+          ]),
+        }}
+      />
+    </Panel>
+  );
   return (
-    <section className="max-w-6xl">
+    <Page>
       <h1 className="page-title flex items-center gap-3">
         <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-sleep" />
         Sleep
       </h1>
       <DateNav shownDate={data.date} />
 
+      <WithAside label="Sleep history" aside={history}>
       {!night ? (
         <p className="rounded-lg border border-dashed border-stone-300 p-8 text-center text-sm text-stone-500 dark:border-stone-700">
           No sleep recorded for the night before this day.
@@ -220,23 +237,7 @@ export default function SleepPage() {
         </>
       )}
 
-      <section className="mt-4 rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
-        <h2 className="mb-3 font-condensed text-[1.35rem] font-extrabold uppercase leading-none">Last 14 nights</h2>
-        <DataTable
-          data={{
-            columns: ["Night ending", "Bedtime", "Wake", "Asleep", "Deep", "REM", "Score"],
-            rows: [...(recent.data ?? [])].reverse().map((n) => [
-              n.date,
-              n.bedtime_local,
-              n.wake_local,
-              formatMinutes(n.asleep_min),
-              formatMinutes(n.stage_minutes.deep),
-              formatMinutes(n.stage_minutes.rem),
-              formatNumber(n.score),
-            ]),
-          }}
-        />
-      </section>
-    </section>
+      </WithAside>
+    </Page>
   );
 }

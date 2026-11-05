@@ -92,6 +92,30 @@ day" (it isn't a readiness pillar).
 - In-plot drag zoom is enabled only with a precise pointer, so it never traps page scroll on
   a phone.
 
+## Phase 8 layout: using wide screens (2026-11-06)
+
+Made for a 1920px monitor without hurting laptops or phones.
+
+- **Width:** pages grow to 100rem (1600px) instead of stopping at 768–1152px
+  (`components/PageLayout.tsx`: `Page`).
+- **Side panel:** `WithAside` puts context beside the main column from `xl` (1280px), 22rem
+  wide (25rem from `2xl`), sticky while the main column scrolls; below `xl` it stacks under the
+  main content.
+- **Chart height** scales with the screen inside `Chart`: the given height on a laptop, ×1.2
+  from 1280px, ×1.4 from 1536px.
+
+| Page | Main column | Side panel |
+|---|---|---|
+| Today | sleeve, sleep/strain; at `2xl` a third column with warnings + coach's brief | — |
+| Trends | chart + "Moves with …" (3 related metrics, small) | stats: latest, 7/30-day average, normal, change, highest/lowest, days with data (`trendStats.ts`) |
+| Heart | zoomable day + RHR/HRV trends | 4 stats + heart-rate zones |
+| Sleep | stats, stages, overnight SpO2/HRV | last 14 nights (compact) |
+| Activity | totals, steps by hour, levels, stress | workouts as a list |
+| Body | weight and body-fat charts, taller | latest values + note on day-to-day swings |
+| Coach | the chat (bubbles capped at 68ch) | latest day as three small sleeves, suggested questions, what the coach sees |
+| Journal | entry and "What affects you" side by side, history below | — |
+| Settings | cards in two columns | — |
+
 ## Theme
 - Tailwind switches from `media` to `class` dark mode; `<html class="dark">` is set from the
   stored choice (`light` | `dark` | `system`), following the OS when `system`.

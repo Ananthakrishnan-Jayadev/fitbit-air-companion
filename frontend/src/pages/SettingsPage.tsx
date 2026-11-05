@@ -5,6 +5,7 @@ import ProfileCard from "../components/settings/ProfileCard.tsx";
 import SessionCard from "../components/settings/SessionCard.tsx";
 import SyncCard from "../components/settings/SyncCard.tsx";
 import SystemStatusCard from "../components/settings/SystemStatusCard.tsx";
+import { Page } from "../components/PageLayout.tsx";
 
 const AUTH_ERRORS: Record<string, string> = {
   access_denied: "Google sign-in was cancelled.",
@@ -22,12 +23,12 @@ export default function SettingsPage() {
   const connected = params.get("connected") === "1";
 
   return (
-    <section className="max-w-4xl">
+    <Page>
       <h1 className="page-title">Settings</h1>
 
       {(authError || connected) && (
         <div
-          className={`mt-4 flex items-start justify-between gap-4 rounded-md border px-4 py-2 text-sm ${
+          className={`flex max-w-3xl items-start justify-between gap-4 border px-4 py-2 text-sm ${
             authError
               ? "border-red-300 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200"
               : "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
@@ -44,14 +45,19 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <div className="mt-6 grid gap-4">
-        <GoogleConnectionCard />
-        <SyncCard />
-        <ProfileCard />
-        <DataCard />
-        <SystemStatusCard />
-        <SessionCard />
+      {/* Two columns of cards on wide screens; each card keeps its own height. */}
+      <div className="mt-6 grid items-start gap-6 xl:grid-cols-2">
+        <div className="grid gap-6">
+          <GoogleConnectionCard />
+          <SyncCard />
+          <SessionCard />
+        </div>
+        <div className="grid gap-6">
+          <ProfileCard />
+          <DataCard />
+          <SystemStatusCard />
+        </div>
       </div>
-    </section>
+    </Page>
   );
 }

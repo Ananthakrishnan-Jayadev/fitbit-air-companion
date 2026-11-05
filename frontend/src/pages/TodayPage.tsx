@@ -7,6 +7,7 @@ import DateNav from "../components/DateNav.tsx";
 import { AlertTriangle, ArrowRight } from "../components/icons.tsx";
 import Meter from "../components/Meter.tsx";
 import CountUp from "../components/motion/CountUp.tsx";
+import { Page, PANEL } from "../components/PageLayout.tsx";
 import { LoadError, Loading } from "../components/PageState.tsx";
 import { addDays, formatMinutes, formatNumber, formatWeekday } from "../format.ts";
 import { useInsights } from "../hooks/useAI.ts";
@@ -57,7 +58,6 @@ const COMPONENT_LABELS: Record<string, string> = {
 };
 
 const RULE = { borderTop: "1px solid color-mix(in srgb, currentColor 40%, transparent)" };
-const PANEL = "border border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900";
 
 /** "54 ms · normal 46–58" for the proof line under a score. */
 function proof(data: TodayResponse, metric: string): string | null {
@@ -266,7 +266,7 @@ function DayStats({ data }: { data: TodayResponse }) {
       <h2 id="day-heading" className="section-title">
         Your day
       </h2>
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 2xl:grid-cols-6">
         {stats.map(([label, value]) => (
           <div key={label}>
             <dt className="text-xs text-stone-600 dark:text-stone-400">{label}</dt>
@@ -300,7 +300,7 @@ function Breakdown({
     (entry): entry is [string, number] => entry[1] !== null,
   );
   return (
-    <section className={`${PANEL} p-4`}>
+    <section className={PANEL}>
       <h3 className="mb-3 text-sm font-semibold">{title}</h3>
       {entries.length === 0 ? (
         <p className="text-sm text-stone-600 dark:text-stone-400">Not available for this day.</p>
@@ -332,14 +332,18 @@ function BaselineTable({ data }: { data: TodayResponse }) {
     },
   );
   return (
-    <section className={`${PANEL} p-4`}>
+    <section className={PANEL}>
       <h3 className="mb-2 text-sm font-semibold">Compared with your normal</h3>
       <DataTable data={{ columns: ["Metric", "Today", "Your normal range", "Status"], rows }} />
     </section>
   );
 }
 
-const TWO_COLUMNS =
+// Laptop: sleeve | pillars, with the brief below. Monitor (2xl): a third column for the brief
+// and warnings, so the space beside the sleeves holds the coach's reading of the day.
+const TOP_ROW =
+  "grid gap-8 lg:grid-cols-[minmax(0,30rem)_minmax(0,1fr)] xl:grid-cols-[minmax(0,32.5rem)_minmax(0,1fr)] 2xl:grid-cols-[minmax(0,32.5rem)_minmax(0,1fr)_minmax(0,1fr)]";
+const SECOND_ROW =
   "grid gap-8 lg:grid-cols-[minmax(0,30rem)_minmax(0,1fr)] xl:grid-cols-[minmax(0,32.5rem)_minmax(0,1fr)]";
 
 export default function TodayPage() {
@@ -355,11 +359,11 @@ export default function TodayPage() {
   const asleep = proof(data, "sleep_min");
 
   return (
-    <div className="max-w-6xl">
+    <Page>
       <h1 className="page-title">Today</h1>
       <DateNav shownDate={data.date} />
 
-      <div className={TWO_COLUMNS}>
+      <div className={TOP_ROW}>
         <RecoverySleeve data={data} />
         <div className="grid content-start gap-7">
           <Pillar
@@ -384,35 +388,32 @@ export default function TodayPage() {
             target={target}
             lines={strainLines(data.strain, target)}
           />
+        </div>
+        <div className="grid content-start gap-6 lg:col-span-2 2xl:col-span-1">
           {data.flags.length > 0 && <Flags flags={data.flags} />}
+          <BriefCard date={data.date} />
         </div>
       </div>
 
-      <div className={`mt-12 ${TWO_COLUMNS}`}>
+      <div className={`mt-12 ${SECOND_ROW}`}>
         <WeekShelf date={data.date} />
         <DayStats data={data} />
-      </div>
-
-      <div className="mt-12">
-        <BriefCard date={data.date} />
       </div>
 
       <section aria-labelledby="behind-heading" className="mt-12">
         <h2 id="behind-heading" className="section-title">
           Behind the scores
         </h2>
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid items-start gap-6 lg:grid-cols-2 2xl:grid-cols-3">
           <BaselineTable data={data} />
-          <div className="grid content-start gap-6">
-            <Breakdown
-              title="Recovery breakdown"
-              color="var(--series-1)"
-              components={data.components.recovery?.components}
-            />
-            <Breakdown title="Sleep breakdown" color="var(--sleep)" components={sleepJson?.components} />
-          </div>
+          <Breakdown
+            title="Recovery breakdown"
+            color="var(--series-1)"
+            components={data.components.recovery?.components}
+          />
+          <Breakdown title="Sleep breakdown" color="var(--sleep)" components={sleepJson?.components} />
         </div>
       </section>
-    </div>
+    </Page>
   );
 }
