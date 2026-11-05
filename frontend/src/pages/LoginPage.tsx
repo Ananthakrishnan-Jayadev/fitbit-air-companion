@@ -19,13 +19,13 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-slate-50 px-4 dark:bg-slate-950">
+    <main className="flex min-h-dvh items-center justify-center bg-stone-50 px-4 dark:bg-stone-950">
       <form
         onSubmit={submit}
-        className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+        className="w-full max-w-sm rounded-xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-800 dark:bg-stone-900"
       >
         <h1 className="text-xl font-semibold tracking-tight">Fitbit Air Companion</h1>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Enter the app password to continue.</p>
+        <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">Enter the app password to continue.</p>
 
         <label htmlFor="password" className="mt-5 block text-sm font-medium">
           Password
@@ -40,7 +40,7 @@ export default function LoginPage() {
           onChange={(event) => setPassword(event.target.value)}
           aria-invalid={login.isError}
           aria-describedby={login.isError ? "login-error" : undefined}
-          className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950"
+          className="mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm dark:border-stone-700 dark:bg-stone-950"
         />
 
         {login.isError && (

@@ -358,7 +358,7 @@ POST /api/sync            {types?, since?} trigger sync (background); GET /api/s
 GET  /api/today?date                      scores, flags, components, metrics, baseline bands
 GET  /api/daily?start&end                 daily metrics + scores per day
 GET  /api/trends?metric&days&end          daily series + baseline band
-GET  /api/heart?date&points               HR series (LTTB-downsampled), RHR, HRV, Google zones
+GET  /api/heart?date&points[&start_ms&end_ms]  HR series (LTTB-downsampled; optional window for zoom), RHR, HRV, Google zones
 GET  /api/sleep?date | /api/sleep/range?start&end
 GET  /api/activity?date                   hourly steps/calories, levels, stress timeline, workouts
 GET  /api/exercise?start&end

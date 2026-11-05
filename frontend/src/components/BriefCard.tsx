@@ -2,12 +2,13 @@ import { useState, type ReactNode } from "react";
 import { formatDateTime } from "../format.ts";
 import { useAIStatus, useGenerateInsight, useInsights } from "../hooks/useAI.ts";
 import { BUTTON_SECONDARY } from "./settings/Card.tsx";
+import { AlertTriangle } from "./icons.tsx";
 
 // Stop fast-polling if a regeneration never shows up (e.g. the model errored).
 const MAX_WAIT_MS = 5 * 60 * 1000;
 
 function Muted({ children }: { children: ReactNode }) {
-  return <p className="text-sm text-slate-500 dark:text-slate-400">{children}</p>;
+  return <p className="text-sm text-stone-500 dark:text-stone-400">{children}</p>;
 }
 
 /** The local model's brief for a day, plus any anomaly note and this week's review. */
@@ -33,7 +34,7 @@ export default function BriefCard({ date }: { date: string }) {
   }
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+    <section className="rounded-lg border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900">
       <header className="mb-3 flex items-start justify-between gap-4">
         <h2 className="text-sm font-semibold">Coach's brief</h2>
         {ready && (
@@ -55,16 +56,16 @@ export default function BriefCard({ date }: { date: string }) {
       {brief && (
         <div className={writing ? "opacity-60" : undefined}>
           <p className="font-medium">{brief.content.headline}</p>
-          <p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-300">{brief.content.summary}</p>
+          <p className="mt-2 text-sm leading-relaxed text-stone-700 dark:text-stone-300">{brief.content.summary}</p>
           <ul className="mt-3 space-y-2">
             {brief.content.tips.map((tip) => (
               <li key={tip.title} className="text-sm">
                 <span className="font-medium">{tip.title}.</span>{" "}
-                <span className="text-slate-700 dark:text-slate-300">{tip.detail}</span>
+                <span className="text-stone-700 dark:text-stone-300">{tip.detail}</span>
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-xs text-slate-500">
+          <p className="mt-3 text-xs text-stone-500">
             Written by {brief.model} on your computer · {formatDateTime(brief.created_at)} · not medical advice
           </p>
         </div>
@@ -72,7 +73,10 @@ export default function BriefCard({ date }: { date: string }) {
 
       {data?.anomaly && (
         <div className="mt-4 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100">
-          <p className="font-medium">⚠ {data.anomaly.content.headline}</p>
+          <p className="flex items-center gap-2 font-medium">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            {data.anomaly.content.headline}
+          </p>
           <p className="mt-1">{data.anomaly.content.explanation}</p>
           <ul className="mt-2 list-disc pl-5">
             {data.anomaly.content.suggestions.map((s) => (
@@ -88,7 +92,7 @@ export default function BriefCard({ date }: { date: string }) {
           <summary className="cursor-pointer font-medium">
             Weekly review: {data.weekly_review.content.headline}
           </summary>
-          <p className="mt-2 text-slate-700 dark:text-slate-300">{data.weekly_review.content.summary}</p>
+          <p className="mt-2 text-stone-700 dark:text-stone-300">{data.weekly_review.content.summary}</p>
           {data.weekly_review.content.wins.length > 0 && (
             <>
               <p className="mt-2 font-medium">Went well</p>

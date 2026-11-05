@@ -3,19 +3,26 @@ import { useEffect, useRef } from "react";
 import { formatNumber } from "../../format.ts";
 import { COUNT } from "../../motion.ts";
 
-/** A number that counts up from 0 when it appears or changes (instant with reduce motion). */
+/**
+ * A number that rolls from its previous value to the new one (e.g. yesterday's recovery to
+ * today's), so the change itself is visible. First render shows the value as is: nothing
+ * counts up from zero on page load. Instant with reduce motion.
+ */
 export default function CountUp({ value, digits = 0 }: { value: number; digits?: number }) {
   const node = useRef<HTMLSpanElement>(null);
+  const previous = useRef(value);
   const reduce = useReducedMotion();
 
   useEffect(() => {
     const element = node.current;
+    const from = previous.current;
+    previous.current = value;
     if (!element) return;
-    if (reduce) {
+    if (reduce || from === value) {
       element.textContent = formatNumber(value, digits);
       return;
     }
-    const controls = animate(0, value, {
+    const controls = animate(from, value, {
       ...COUNT,
       onUpdate: (latest) => {
         element.textContent = formatNumber(latest, digits);

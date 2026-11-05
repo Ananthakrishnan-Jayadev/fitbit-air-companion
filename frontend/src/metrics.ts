@@ -11,22 +11,26 @@ export interface MetricDef {
   higherIsBetter?: boolean;
   /** Not measured every day (e.g. weigh-ins): charts join the readings and mark each one. */
   sparse?: boolean;
+  /** Pillar hue for charts of this metric (index.css); default is the neutral series blue. */
+  tone?: PillarTone;
 }
+
+export type PillarTone = "sleep" | "strain";
 
 export const METRICS: Record<string, MetricDef> = {
   recovery: { label: "Recovery", unit: "/100", digits: 0, higherIsBetter: true },
-  sleep_perf: { label: "Sleep score", unit: "/100", digits: 0, higherIsBetter: true },
-  strain: { label: "Strain", unit: "/21", digits: 1 },
+  sleep_perf: { label: "Sleep score", unit: "/100", digits: 0, higherIsBetter: true, tone: "sleep" },
+  strain: { label: "Strain", unit: "/21", digits: 1, tone: "strain" },
   stress_avg: { label: "Stress", unit: "/100", digits: 0, higherIsBetter: false },
   resting_hr: { label: "Resting heart rate", unit: "bpm", digits: 0, higherIsBetter: false },
   hrv_rmssd_ms: { label: "HRV (RMSSD)", unit: "ms", digits: 0, higherIsBetter: true },
   spo2_avg: { label: "Blood oxygen", unit: "%", digits: 1, higherIsBetter: true },
   respiratory_rate: { label: "Breathing rate", unit: "br/min", digits: 1, higherIsBetter: false },
   skin_temp_delta_c: { label: "Skin temperature", unit: "°C vs usual", digits: 2 },
-  sleep_min: { label: "Time asleep", unit: "", digits: 0, minutes: true, higherIsBetter: true },
+  sleep_min: { label: "Time asleep", unit: "", digits: 0, minutes: true, higherIsBetter: true, tone: "sleep" },
   steps: { label: "Steps", unit: "", digits: 0 },
   distance_m: { label: "Distance", unit: "km", digits: 2, scale: 0.001 },
-  active_zone_minutes: { label: "Active zone minutes", unit: "min", digits: 0 },
+  active_zone_minutes: { label: "Active zone minutes", unit: "min", digits: 0, tone: "strain" },
   total_calories: { label: "Calories", unit: "kcal", digits: 0 },
   active_calories: { label: "Active calories", unit: "kcal", digits: 0 },
   sedentary_min: { label: "Sedentary time", unit: "", digits: 0, minutes: true },

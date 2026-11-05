@@ -1,33 +1,47 @@
 import { motion } from "motion/react";
 import { COUNT } from "../motion.ts";
 
-/** Horizontal 0..max meter: filled part (animates in) + lighter track. */
-export default function Meter({
-  value,
-  max = 100,
-  color,
-  label,
-}: {
+interface MeterProps {
   value: number | null;
   max?: number;
   color: string;
   label: string;
-}) {
-  const pct = value === null ? 0 : Math.max(0, Math.min(100, (value / max) * 100));
+  /** Optional target range drawn on the track (e.g. today's suggested strain). */
+  target?: [number, number] | null;
+  size?: "sm" | "md";
+}
+
+const pct = (v: number, max: number) => Math.max(0, Math.min(100, (v / max) * 100));
+
+/**
+ * Horizontal 0..max meter. Renders at its value on first paint; afterwards the fill glides
+ * to each new value (switching days), so the bar shows how much it changed.
+ */
+export default function Meter({ value, max = 100, color, label, target, size = "sm" }: MeterProps) {
+  const fill = value === null ? 0 : pct(value, max);
   return (
     <div
-      className="h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800"
+      className={`relative w-full overflow-hidden rounded-full bg-stone-200 dark:bg-stone-800 ${
+        size === "md" ? "h-2.5" : "h-1.5"
+      }`}
       role="meter"
       aria-label={label}
       aria-valuemin={0}
       aria-valuemax={max}
       aria-valuenow={value ?? undefined}
     >
+      {target && (
+        <div
+          aria-hidden
+          className="absolute inset-y-0 bg-stone-400/60 dark:bg-stone-500/50"
+          style={{ left: `${pct(target[0], max)}%`, width: `${pct(target[1], max) - pct(target[0], max)}%` }}
+        />
+      )}
       <motion.div
-        className="h-full rounded-full"
+        className="relative h-full rounded-full"
         style={{ backgroundColor: color }}
-        initial={{ width: 0 }}
-        animate={{ width: `${pct}%` }}
+        initial={false}
+        animate={{ width: `${fill}%` }}
         transition={COUNT}
       />
     </div>

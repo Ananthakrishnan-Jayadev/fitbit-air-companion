@@ -1,9 +1,10 @@
 import { addDays, formatDayLabel } from "../format.ts";
 import { useSelectedDate } from "../hooks/useSelectedDate.ts";
 import { useToday } from "../hooks/useData.ts";
+import { ChevronLeft, ChevronRight } from "./icons.tsx";
 
 const BUTTON =
-  "rounded-md border border-slate-300 px-2.5 py-1 text-sm hover:bg-slate-100 disabled:opacity-40 dark:border-slate-700 dark:hover:bg-slate-800";
+  "inline-flex items-center rounded-md border border-stone-300 px-2.5 py-1 text-sm hover:bg-stone-100 disabled:opacity-40 dark:border-stone-700 dark:hover:bg-stone-800";
 
 /** Day picker shown above every chart on a day page (one filter row for the whole page). */
 export default function DateNav({ shownDate }: { shownDate: string | undefined }) {
@@ -23,11 +24,11 @@ export default function DateNav({ shownDate }: { shownDate: string | undefined }
         onClick={() => setDate(addDays(current, -1))}
         aria-label="Previous day"
       >
-        ←
+        <ChevronLeft />
       </button>
       <input
         type="date"
-        className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-950"
+        className="rounded-md border border-stone-300 bg-white px-2 py-1 text-sm dark:border-stone-700 dark:bg-stone-950"
         value={current}
         min={first}
         max={last}
@@ -41,14 +42,14 @@ export default function DateNav({ shownDate }: { shownDate: string | undefined }
         onClick={() => setDate(addDays(current, 1))}
         aria-label="Next day"
       >
-        →
+        <ChevronRight />
       </button>
       {last && current !== last && (
         <button type="button" className={BUTTON} onClick={() => setDate(last)}>
           Latest
         </button>
       )}
-      <span className="ml-2 text-sm text-slate-500">{formatDayLabel(current)}</span>
+      <span className="ml-2 text-sm text-stone-500">{formatDayLabel(current)}</span>
     </div>
   );
 }

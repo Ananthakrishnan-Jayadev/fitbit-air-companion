@@ -70,10 +70,10 @@ export default function ProfileCard() {
   const { data } = useProfile();
   return (
     <Card title="Profile">
-      <p className="mb-3 text-sm text-slate-600 dark:text-slate-400">
+      <p className="mb-3 text-sm text-stone-600 dark:text-stone-400">
         Used for strain and sleep scoring (Phase 3). Leave max heart rate empty to estimate it from age.
       </p>
-      {data ? <ProfileForm initial={data} /> : <p className="text-sm text-slate-500">Loading…</p>}
+      {data ? <ProfileForm initial={data} /> : <p className="text-sm text-stone-500">Loading…</p>}
     </Card>
   );
 }

@@ -90,7 +90,7 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-start justify-center bg-slate-950/40 px-4 pt-[15vh]"
+          className="fixed inset-0 z-50 flex items-start justify-center bg-stone-950/40 px-4 pt-[15vh]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -103,7 +103,7 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
             role="dialog"
             aria-modal="true"
             aria-label="Command palette"
-            className="w-full max-w-lg overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+            className="w-full max-w-lg overflow-hidden rounded-xl border border-stone-200 bg-white shadow-2xl dark:border-stone-800 dark:bg-stone-900"
             initial={{ opacity: 0, y: -8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0 }}
@@ -111,7 +111,7 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
           >
             <input
               autoFocus
-              className="w-full border-b border-slate-200 bg-transparent px-4 py-3 text-sm outline-none dark:border-slate-800"
+              className="w-full border-b border-stone-200 bg-transparent px-4 py-3 text-sm outline-none dark:border-stone-800"
               placeholder="Go to a page, a date (YYYY-MM-DD), or ask the coach…"
               value={query}
               onChange={(e) => {
@@ -132,7 +132,7 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
                   role="option"
                   aria-selected={i === current}
                   className={`flex cursor-pointer items-center justify-between gap-4 px-4 py-2 text-sm ${
-                    i === current ? "bg-slate-100 dark:bg-slate-800" : ""
+                    i === current ? "bg-stone-100 dark:bg-stone-800" : ""
                   }`}
                   onMouseEnter={() => setActive(i)}
                   onMouseDown={(e) => {
@@ -141,11 +141,11 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
                   }}
                 >
                   <span className="truncate">{command.label}</span>
-                  <span className="shrink-0 text-xs text-slate-500">{command.hint}</span>
+                  <span className="shrink-0 text-xs text-stone-500">{command.hint}</span>
                 </li>
               ))}
               {commands.length === 0 && (
-                <li className="px-4 py-3 text-sm text-slate-500">No matches.</li>
+                <li className="px-4 py-3 text-sm text-stone-500">No matches.</li>
               )}
             </ul>
           </motion.div>

@@ -136,7 +136,7 @@ export default function CoachPage() {
           New chat
         </button>
       </div>
-      <p className="mb-4 text-sm text-slate-500">
+      <p className="mb-4 text-sm text-stone-500">
         Runs on this computer{status ? ` with ${status.model}` : ""}. It sees your scores and daily
         summaries, not raw data. Not medical advice.
       </p>
@@ -147,7 +147,7 @@ export default function CoachPage() {
         </p>
       )}
 
-      <div className="min-h-[16rem] space-y-3 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+      <div className="min-h-[16rem] space-y-3 rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
         {shown.length === 0 && (
           <div className="flex flex-wrap gap-2">
             {SUGGESTIONS.map((s) => (
@@ -175,8 +175,8 @@ export default function CoachPage() {
               <div
                 className={`max-w-[85%] whitespace-pre-wrap rounded-lg px-3 py-2 text-sm ${
                   m.role === "user"
-                    ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
-                    : "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
+                    ? "bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900"
+                    : "bg-stone-100 text-stone-900 dark:bg-stone-800 dark:text-stone-100"
                 }`}
               >
                 {m.content || (sending && i === shown.length - 1 ? "Thinking…" : "")}
@@ -215,7 +215,7 @@ export default function CoachPage() {
       <form onSubmit={onSubmit} className="mt-3 flex items-end gap-2">
         <textarea
           ref={textarea}
-          className="min-h-[2.75rem] flex-1 resize-y rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950"
+          className="min-h-[2.75rem] flex-1 resize-y rounded-md border border-stone-300 bg-white px-3 py-2 text-sm dark:border-stone-700 dark:bg-stone-950"
           rows={2}
           maxLength={2000}
           placeholder={ready ? "Ask about your sleep, recovery, training…" : "Coach unavailable"}

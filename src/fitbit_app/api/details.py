@@ -133,23 +133,40 @@ def heart(
     session: SessionDep,
     date: dt.date | None = None,
     points: Annotated[int, Query(ge=100, le=5000)] = 1500,
+    start_ms: Annotated[int | None, Query(ge=0)] = None,
+    end_ms: Annotated[int | None, Query(ge=0)] = None,
 ) -> HeartResponse:
+    """One day of heart rate, simplified to `points` (peaks kept).
+
+    `start_ms`/`end_ms` (epoch ms) narrow `samples` to a window of that day, so a zoomed chart
+    can fetch full detail for just the visible span. Daily stats always cover the whole day.
+    """
+    if (start_ms is None) != (end_ms is None):
+        raise HTTPException(422, "Pass both start_ms and end_ms, or neither")
+    if start_ms is not None and end_ms is not None and end_ms <= start_ms:
+        raise HTTPException(422, "end_ms must be after start_ms")
     day = _resolve_day(session, date)
     clock = DayClock.load(session)
     start, end = clock.window(day)
     hr = load_hr(session, start, end)
     daily = session.get(DailyMetric, day)
     samples: Series = []
+    shown = 0
     if not hr.empty:
         ms = _epoch_ms(hr["ts"])
         bpm = hr["bpm"].to_numpy(dtype=float)
-        keep = lttb_indices(ms, bpm, points)
-        samples = [(int(ms[i]), float(bpm[i])) for i in keep]
+        if start_ms is not None and end_ms is not None:
+            inside = (ms >= start_ms) & (ms <= end_ms)
+            ms, bpm = ms[inside], bpm[inside]
+        shown = len(ms)
+        if shown:
+            keep = lttb_indices(ms, bpm, points)
+            samples = [(int(ms[i]), float(bpm[i])) for i in keep]
     return HeartResponse(
         date=day,
         utc_offset_min=_offset_min(clock, day),
         samples=samples,
-        sample_count=len(hr),
+        sample_count=shown,
         resting_hr=daily.resting_hr if daily else None,
         hrv_rmssd_ms=daily.hrv_rmssd_ms if daily else None,
         min_bpm=int(hr["bpm"].min()) if not hr.empty else None,

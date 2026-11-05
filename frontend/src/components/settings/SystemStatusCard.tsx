@@ -9,7 +9,7 @@ function Row({ label, tone, detail }: { label: string; tone: Tone; detail: strin
       </span>
       <div>
         <div className="text-sm font-medium">{label}</div>
-        <div className="text-sm text-slate-600 dark:text-slate-400">{detail}</div>
+        <div className="text-sm text-stone-600 dark:text-stone-400">{detail}</div>
       </div>
     </li>
   );
@@ -21,9 +21,9 @@ export default function SystemStatusCard() {
   return (
     <Card title="System">
       {!data ? (
-        <p className="text-sm text-slate-500">Loading…</p>
+        <p className="text-sm text-stone-500">Loading…</p>
       ) : (
-        <ul className="divide-y divide-slate-200 dark:divide-slate-800">
+        <ul className="divide-y divide-stone-200 dark:divide-stone-800">
           <Row
             label="Database"
             tone={data.database.ok ? "ok" : "error"}

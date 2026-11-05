@@ -49,7 +49,7 @@ function stepsChart(t: ChartTokens, data: ActivityResponse): EChartsOption {
         type: "bar",
         data: data.hourly.map((h) => h.steps),
         barMaxWidth: 24,
-        itemStyle: { color: t["series-1"], borderRadius: [4, 4, 0, 0] },
+        itemStyle: { color: t.strain, borderRadius: [4, 4, 0, 0] },
       },
     ],
   };
@@ -118,7 +118,10 @@ export default function ActivityPage() {
 
   return (
     <section className="max-w-6xl">
-      <h1 className="mb-4 text-2xl font-semibold tracking-tight">Activity</h1>
+      <h1 className="mb-4 flex items-center gap-2.5 text-2xl font-semibold tracking-tight">
+        <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-strain" />
+        Activity
+      </h1>
       <DateNav shownDate={data.date} />
 
       <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-6">
@@ -163,15 +166,15 @@ export default function ActivityPage() {
           {data.stress.length ? (
             <Chart option={stressChart(t, data)} height={220} label="Stress level through the day" />
           ) : (
-            <p className="py-8 text-sm text-slate-500">Not enough calm, awake time with heart-rate data.</p>
+            <p className="py-8 text-sm text-stone-500">Not enough calm, awake time with heart-rate data.</p>
           )}
         </ChartCard>
       </div>
 
-      <section className="mt-4 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+      <section className="mt-4 rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
         <h2 className="mb-2 text-sm font-semibold">Workouts</h2>
         {data.workouts.length === 0 ? (
-          <p className="text-sm text-slate-500">No workouts recorded.</p>
+          <p className="text-sm text-stone-500">No workouts recorded.</p>
         ) : (
           <DataTable
             data={{

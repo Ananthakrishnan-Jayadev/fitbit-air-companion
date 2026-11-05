@@ -4,10 +4,12 @@ import {
   fetchBody,
   fetchDaily,
   fetchHeart,
+  fetchHeartWindow,
   fetchSleep,
   fetchSleepRange,
   fetchToday,
   fetchTrend,
+  type TimeWindow,
 } from "../api/data.ts";
 
 // keepPreviousData: when switching days, keep showing the last day instead of flashing empty.
@@ -34,6 +36,18 @@ export function useHeart(date: string | undefined) {
     queryKey: ["heart", date ?? "latest"],
     queryFn: ({ signal }) => fetchHeart(date, signal),
     placeholderData: keepPreviousData,
+    retry: false,
+  });
+}
+
+/** Full-detail heart rate for a zoomed window; idle while `window` is null. */
+export function useHeartWindow(date: string | undefined, window: TimeWindow | null) {
+  return useQuery({
+    queryKey: ["heart-window", date, window?.start, window?.end],
+    queryFn: ({ signal }) => fetchHeartWindow(date as string, window as TimeWindow, signal),
+    enabled: Boolean(date && window),
+    placeholderData: keepPreviousData,
+    staleTime: 5 * 60_000,
     retry: false,
   });
 }

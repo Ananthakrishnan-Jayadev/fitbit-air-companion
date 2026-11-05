@@ -33,6 +33,18 @@ export function fetchHeart(date: string | undefined, signal?: AbortSignal): Prom
   return apiGet<HeartResponse>(`/heart${dateQuery(date)}`, signal);
 }
 
+/** Epoch-ms span of one day's heart rate, for full-detail zoom. */
+export interface TimeWindow {
+  start: number;
+  end: number;
+}
+
+/** Heart rate inside `window` only, at up to 5000 points (full detail for spans of ~1 h). */
+export function fetchHeartWindow(date: string, window: TimeWindow, signal?: AbortSignal): Promise<HeartResponse> {
+  const span = `&start_ms=${Math.floor(window.start)}&end_ms=${Math.ceil(window.end)}`;
+  return apiGet<HeartResponse>(`/heart?date=${encodeURIComponent(date)}&points=5000${span}`, signal);
+}
+
 export function fetchSleep(date: string | undefined, signal?: AbortSignal): Promise<SleepResponse> {
   return apiGet<SleepResponse>(`/sleep${dateQuery(date)}`, signal);
 }

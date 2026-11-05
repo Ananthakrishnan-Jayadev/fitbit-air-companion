@@ -62,7 +62,7 @@ function hypnogram(t: ChartTokens, stages: SleepStageOut[]): EChartsOption {
         step: "end",
         data,
         symbol: "none",
-        lineStyle: { width: 2, color: t["series-1"] },
+        lineStyle: { width: 2, color: t.sleep },
       },
     ],
   };
@@ -84,7 +84,7 @@ function overnightLine(t: ChartTokens, points: Point[], unit: string, digits: nu
         type: "line",
         data: points,
         symbol: "none",
-        lineStyle: { width: 2, color: t["series-1"] },
+        lineStyle: { width: 2, color: t.sleep },
       },
     ],
   };
@@ -105,7 +105,7 @@ function stageBars(t: ChartTokens, minutes: Record<string, number>): EChartsOpti
         type: "bar",
         data: stages.map((s) => Math.round(minutes[s] ?? 0)),
         barMaxWidth: 24,
-        itemStyle: { color: t["series-1"], borderRadius: [4, 4, 0, 0] },
+        itemStyle: { color: t.sleep, borderRadius: [4, 4, 0, 0] },
         label: {
           show: true,
           position: "top",
@@ -132,11 +132,14 @@ export default function SleepPage() {
   const asleep = data.components.asleep_min;
   return (
     <section className="max-w-6xl">
-      <h1 className="mb-4 text-2xl font-semibold tracking-tight">Sleep</h1>
+      <h1 className="mb-4 flex items-center gap-2.5 text-2xl font-semibold tracking-tight">
+        <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-sleep" />
+        Sleep
+      </h1>
       <DateNav shownDate={data.date} />
 
       {!night ? (
-        <p className="rounded-lg border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500 dark:border-slate-700">
+        <p className="rounded-lg border border-dashed border-stone-300 p-8 text-center text-sm text-stone-500 dark:border-stone-700">
           No sleep recorded for the night before this day.
         </p>
       ) : (
@@ -200,7 +203,7 @@ export default function SleepPage() {
               {data.spo2.length ? (
                 <Chart option={overnightLine(t, data.spo2, "%", 1)} height={200} label="Blood oxygen overnight" />
               ) : (
-                <p className="py-8 text-sm text-slate-500">No SpO2 readings.</p>
+                <p className="py-8 text-sm text-stone-500">No SpO2 readings.</p>
               )}
             </ChartCard>
             <ChartCard
@@ -210,14 +213,14 @@ export default function SleepPage() {
               {data.hrv.length ? (
                 <Chart option={overnightLine(t, data.hrv, "ms", 0)} height={200} label="HRV overnight" />
               ) : (
-                <p className="py-8 text-sm text-slate-500">No HRV readings.</p>
+                <p className="py-8 text-sm text-stone-500">No HRV readings.</p>
               )}
             </ChartCard>
           </div>
         </>
       )}
 
-      <section className="mt-4 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+      <section className="mt-4 rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
         <h2 className="mb-2 text-sm font-semibold">Last 14 nights</h2>
         <DataTable
           data={{

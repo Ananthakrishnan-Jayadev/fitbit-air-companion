@@ -2,7 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Chart tokens: the dataviz reference palette (validated light/dark steps). */
+/*
+ * Colour roles (design.md "Colour"). Neutrals are warm (Tailwind stone) to match the chart
+ * tokens. Hue is reserved for meaning:
+ *   - status (good / warning / serious / critical): recovery bands and flags, always labelled
+ *   - pillars: sleep (violet) and strain (teal) keep their hue on every page
+ *   - series-1 (blue): any other single-series chart
+ * Pillar and status hues are used for marks (dots, bars, lines, tints), never for body text.
+ */
 :root {
   --surface-1: #fcfcfb;
   --ink-1: #0b0b0b;
@@ -17,6 +24,11 @@
   --seq-350: #5598e7;
   --seq-450: #2a78d6;
   --seq-600: #184f95;
+  /* Pillars. */
+  --sleep: #6650d0;
+  --sleep-wash: rgba(102, 80, 208, 0.12);
+  --strain: #0b7f8c;
+  --strain-wash: rgba(11, 127, 140, 0.12);
   /* Status: always shown with a text label, never color alone. */
   --good: #0ca30c;
   --warning: #fab219;
@@ -35,6 +47,10 @@
   --axis: #383835;
   --series-1: #3987e5;
   --series-1-wash: rgba(57, 135, 229, 0.12);
+  --sleep: #9d8df0;
+  --sleep-wash: rgba(157, 141, 240, 0.14);
+  --strain: #3fb6c2;
+  --strain-wash: rgba(63, 182, 194, 0.14);
 }
 
 :root:not(.dark) {
@@ -42,7 +58,15 @@
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
+  @apply bg-stone-50 text-stone-900 antialiased dark:bg-stone-950 dark:text-stone-100;
+  font-variant-numeric: tabular-nums;
+  caret-color: var(--series-1);
+  scrollbar-color: var(--axis) transparent;
+}
+
+::selection {
+  background-color: var(--series-1-wash);
+  color: inherit;
 }
 
 /* Keyboard focus is always visible; mouse clicks don't show the ring. */
@@ -50,4 +74,8 @@ body {
   outline: 2px solid var(--series-1);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+a {
+  text-underline-offset: 3px;
 }

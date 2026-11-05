@@ -18,7 +18,7 @@ export default function ThemeToggle({
     <div
       role="radiogroup"
       aria-label="Theme"
-      className="inline-flex rounded-md border border-slate-300 p-0.5 text-xs dark:border-slate-700"
+      className="inline-flex rounded-md border border-stone-300 p-0.5 text-xs dark:border-stone-700"
     >
       {OPTIONS.map((option) => (
         <button
@@ -29,8 +29,8 @@ export default function ThemeToggle({
           onClick={() => onChange(option.value)}
           className={`rounded px-2 py-1 transition-colors ${
             theme === option.value
-              ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
-              : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+              ? "bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900"
+              : "text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800"
           }`}
         >
           {option.label}

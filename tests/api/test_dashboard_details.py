@@ -104,6 +104,30 @@ def test_heart(scored: TestClient) -> None:
     assert body["zones"] == []  # no raw zone data in the synthetic set
 
 
+
+def test_heart_window_returns_only_that_span(scored: TestClient) -> None:
+    day = scored.get(f"/api/heart?date={LAST}&points=300").json()
+    first = day["samples"][0][0]
+    start, end = first + 3_600_000, first + 2 * 3_600_000  # one hour, in epoch ms
+    body = scored.get(f"/api/heart?date={LAST}&points=5000&start_ms={start}&end_ms={end}").json()
+    times = [t for t, _ in body["samples"]]
+    assert times and all(start <= t <= end for t in times)
+    # One reading per minute in the synthetic set: the full hour, not a simplified subset.
+    assert body["sample_count"] == len(times) == 61
+    # Daily stats still describe the whole day.
+    assert (body["min_bpm"], body["max_bpm"]) == (day["min_bpm"], day["max_bpm"])
+
+
+def test_heart_window_outside_the_day_is_empty(scored: TestClient) -> None:
+    body = scored.get(f"/api/heart?date={LAST}&start_ms=0&end_ms=1000").json()
+    assert body["samples"] == []
+    assert body["sample_count"] == 0
+
+
+@pytest.mark.parametrize("query", ["start_ms=1000", "end_ms=1000", "start_ms=2000&end_ms=1000"])
+def test_heart_window_validation(scored: TestClient, query: str) -> None:
+    assert scored.get(f"/api/heart?date={LAST}&{query}").status_code == 422
+
 def test_sleep(scored: TestClient) -> None:
     body = scored.get(f"/api/sleep?date={LAST}").json()
     assert body["night"] is not None

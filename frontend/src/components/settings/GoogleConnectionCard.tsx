@@ -14,7 +14,7 @@ export default function GoogleConnectionCard() {
   if (isLoading || !data) {
     return (
       <Card title="Google Health">
-        <p className="text-sm text-slate-500">Loading…</p>
+        <p className="text-sm text-stone-500">Loading…</p>
       </Card>
     );
   }
@@ -28,7 +28,7 @@ export default function GoogleConnectionCard() {
           </span>
           <div>
             <p className="font-medium">Not configured</p>
-            <p className="text-slate-600 dark:text-slate-400">
+            <p className="text-stone-600 dark:text-stone-400">
               Set{" "}
               {[
                 !data.configured && "GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET",

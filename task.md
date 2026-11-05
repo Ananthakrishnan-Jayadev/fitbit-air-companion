@@ -208,6 +208,19 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done
 - [x] Login page and Settings → App login (sign out); 401 anywhere → back to the login form
 - [ ] **You:** set `APP_PASSWORD`, publish the LAN port, check login on laptop and phone
 
+## Phase 7: design refinement (colour, layout, motion, fluid charts)
+- [x] PRODUCT.md (product context for design work)
+- [x] Colour roles: warm neutrals, sleep (violet) / strain (teal) pillar hues, tinted
+      recovery panel, themed selection/caret/scrollbar, SVG icons instead of glyph icons
+- [x] Today restructured: recovery panel + week strip, Sleep/Strain pillar tiles, "Your day"
+      grid, "Behind the scores"
+- [x] Motion: change instead of arrival (numbers/meters roll between days), sliding
+      selection in sidebar, tab bar and week strip; page-load stagger removed
+- [x] Fluid charts: in-place updates that glide between days/metrics; zoomable Heart day
+      with full-detail window fetch (`/api/heart?start_ms&end_ms`, tests)
+- [ ] **You:** build, lint, test; check Today/Heart/Trends on phone and laptop, both themes,
+      and with reduce motion on
+
 ## Possible next steps
 - [ ] Brief accuracy: give the model precomputed comparisons (e.g. strain vs yesterday) and
       check that every number in a brief appears in its input data

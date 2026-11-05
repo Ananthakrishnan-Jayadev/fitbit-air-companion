@@ -22,7 +22,7 @@ export default function TrendsPage() {
       {/* One filter row for the page. */}
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <select
-          className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-950"
+          className="rounded-md border border-stone-300 bg-white px-2 py-1 text-sm dark:border-stone-700 dark:bg-stone-950"
           value={metric}
           onChange={(e) => update({ metric: e.target.value })}
           aria-label="Metric"
@@ -33,7 +33,7 @@ export default function TrendsPage() {
             </option>
           ))}
         </select>
-        <div className="flex overflow-hidden rounded-md border border-slate-300 dark:border-slate-700" role="group">
+        <div className="flex overflow-hidden rounded-md border border-stone-300 dark:border-stone-700" role="group">
           {RANGES.map((r) => (
             <button
               key={r}
@@ -42,8 +42,8 @@ export default function TrendsPage() {
               onClick={() => update({ days: r })}
               className={`px-3 py-1 text-sm ${
                 r === days
-                  ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
-                  : "hover:bg-slate-100 dark:hover:bg-slate-800"
+                  ? "bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900"
+                  : "hover:bg-stone-100 dark:hover:bg-stone-800"
               }`}
             >
               {r}d

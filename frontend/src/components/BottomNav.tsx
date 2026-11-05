@@ -18,8 +18,8 @@ const MORE = [
 ];
 
 function tabClass({ isActive }: { isActive: boolean }): string {
-  return `flex flex-1 flex-col items-center py-2 text-xs font-medium ${
-    isActive ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"
+  return `relative flex min-h-12 flex-1 flex-col items-center justify-center text-xs font-medium ${
+    isActive ? "text-stone-900 dark:text-white" : "text-stone-500 dark:text-stone-400"
   }`;
 }
 
@@ -31,12 +31,12 @@ export default function BottomNav() {
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur md:hidden dark:border-slate-800 dark:bg-slate-950/95"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden dark:border-stone-800 dark:bg-stone-950/95"
     >
       <AnimatePresence>
         {moreOpen && (
           <motion.ul
-            className="absolute bottom-full right-2 mb-2 w-44 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-800 dark:bg-slate-900"
+            className="absolute bottom-full right-2 mb-2 w-44 overflow-hidden rounded-lg border border-stone-200 bg-white py-1 shadow-lg dark:border-stone-800 dark:bg-stone-900"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
@@ -47,7 +47,7 @@ export default function BottomNav() {
                 <NavLink
                   to={item.path}
                   onClick={close}
-                  className="block px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="block px-4 py-2 text-sm hover:bg-stone-100 dark:hover:bg-stone-800"
                 >
                   {item.label}
                 </NavLink>
@@ -59,12 +59,25 @@ export default function BottomNav() {
       <div className="flex">
         {PRIMARY.map((item) => (
           <NavLink key={item.path} to={item.path} end={item.path === "/"} className={tabClass} onClick={close}>
-            {item.label}
+            {({ isActive }) => (
+              <>
+                {isActive && (
+                  // A bar above the active tab that slides to the next one.
+                  <motion.span
+                    layoutId="tab-active"
+                    transition={FAST}
+                    aria-hidden
+                    className="absolute inset-x-4 top-0 h-0.5 rounded-full bg-stone-900 dark:bg-white"
+                  />
+                )}
+                {item.label}
+              </>
+            )}
           </NavLink>
         ))}
         <button
           type="button"
-          className="flex flex-1 flex-col items-center py-2 text-xs font-medium text-slate-500 dark:text-slate-400"
+          className="flex min-h-12 flex-1 flex-col items-center justify-center text-xs font-medium text-stone-500 dark:text-stone-400"
           aria-expanded={moreOpen}
           onClick={() => setMoreOpen((open) => !open)}
         >

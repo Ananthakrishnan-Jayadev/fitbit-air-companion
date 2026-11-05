@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import type { JournalEntry, Outcome, TagEffect } from "../api/types.ts";
 import { DataTable } from "../components/ChartCard.tsx";
+import { ChevronLeft, ChevronRight } from "../components/icons.tsx";
 import { BUTTON, BUTTON_SECONDARY, INPUT } from "../components/settings/Card.tsx";
 import { addDays, formatDayLabel, formatNumber, localTodayIso } from "../format.ts";
 import { useCorrelations, useJournal, useSaveJournal, useTags } from "../hooks/useJournal.ts";
@@ -41,9 +42,9 @@ function EntryEditor({ date, entry, allTags }: { date: string; entry?: JournalEn
   }
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <div className="rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
       <h2 className="text-sm font-semibold">{formatDayLabel(date)}</h2>
-      <p className="mb-3 text-xs text-slate-500">
+      <p className="mb-3 text-xs text-stone-500">
         Tag what happened this day. It is compared with how you slept that night and recovered the next morning.
       </p>
       <div className="flex flex-wrap gap-2">
@@ -57,8 +58,8 @@ function EntryEditor({ date, entry, allTags }: { date: string; entry?: JournalEn
               onClick={() => toggle(tag)}
               className={`rounded-full border px-3 py-1 text-sm ${
                 on
-                  ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900"
-                  : "border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
+                  ? "border-stone-900 bg-stone-900 text-white dark:border-stone-100 dark:bg-stone-100 dark:text-stone-900"
+                  : "border-stone-300 hover:bg-stone-100 dark:border-stone-700 dark:hover:bg-stone-800"
               }`}
             >
               {on ? "✓ " : ""}
@@ -120,7 +121,7 @@ function WhatAffectsYou() {
   const effects = data?.effects ?? [];
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <section className="rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-sm font-semibold">What affects you</h2>
         <select
@@ -136,13 +137,13 @@ function WhatAffectsYou() {
           ))}
         </select>
       </div>
-      <p className="mb-3 text-xs text-slate-500">
+      <p className="mb-3 text-xs text-stone-500">
         Average difference on days after a tag vs. logged days without it (last 180 days). A tag
         needs at least 5 days with and 5 without. "Clear" means the 95% range doesn't cross zero.
         Patterns, not proof of cause.
       </p>
       {effects.length === 0 ? (
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-stone-500">
           Not enough journal data yet ({data?.logged_days ?? 0} days logged). Keep tagging your days.
         </p>
       ) : (
@@ -180,7 +181,7 @@ export default function JournalPage() {
       <h1 className="mb-4 text-2xl font-semibold tracking-tight">Journal</h1>
       <div className="mb-6 flex flex-wrap items-center gap-2">
         <button type="button" className={BUTTON_SECONDARY} onClick={() => setDate(addDays(date, -1))} aria-label="Previous day">
-          ←
+          <ChevronLeft />
         </button>
         <input
           type="date"
@@ -197,12 +198,12 @@ export default function JournalPage() {
           onClick={() => setDate(addDays(date, 1))}
           aria-label="Next day"
         >
-          →
+          <ChevronRight />
         </button>
       </div>
 
       {journal.isLoading || tags.isLoading ? (
-        <p className="text-sm text-slate-500">Loading…</p>
+        <p className="text-sm text-stone-500">Loading…</p>
       ) : (
         <EntryEditor key={`${date}:${entry?.tags.join(",") ?? ""}:${entry?.note ?? ""}`} date={date} entry={entry} allTags={allTags} />
       )}
@@ -211,10 +212,10 @@ export default function JournalPage() {
         <WhatAffectsYou />
       </div>
 
-      <section className="mt-4 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+      <section className="mt-4 rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
         <h2 className="mb-2 text-sm font-semibold">Last {HISTORY_DAYS} days</h2>
         {entries.length === 0 ? (
-          <p className="text-sm text-slate-500">No entries yet.</p>
+          <p className="text-sm text-stone-500">No entries yet.</p>
         ) : (
           <DataTable
             data={{

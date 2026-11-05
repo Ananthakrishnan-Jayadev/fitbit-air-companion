@@ -23,6 +23,9 @@ export default function TrendChart({ metric, days, end, height = 240 }: TrendCha
   // Sparse metrics (weigh-ins) keep only days with a reading, joined by a line.
   const points = (data?.points ?? []).filter((p) => !def.sparse || p.value !== null);
   const hasBand = points.some((p) => p.baseline);
+  // Sleep and strain metrics keep their pillar hue; everything else uses the series blue.
+  const color = def.tone ? t[def.tone] : t["series-1"];
+  const wash = def.tone ? t[def.tone === "sleep" ? "sleep-wash" : "strain-wash"] : t["series-1-wash"];
 
   const option: EChartsOption = {
     grid: grid(),
@@ -39,6 +42,7 @@ export default function TrendChart({ metric, days, end, height = 240 }: TrendCha
     yAxis: valueAxis(t, { scale: true }),
     series: [
       {
+        id: "band-low",
         type: "line",
         data: points.map((p) => [p.date, p.baseline ? p.baseline.low * scale : null]),
         stack: "band",
@@ -47,6 +51,7 @@ export default function TrendChart({ metric, days, end, height = 240 }: TrendCha
         silent: true,
       },
       {
+        id: "band-width",
         type: "line",
         data: points.map((p) => [
           p.date,
@@ -55,15 +60,16 @@ export default function TrendChart({ metric, days, end, height = 240 }: TrendCha
         stack: "band",
         symbol: "none",
         lineStyle: { opacity: 0 },
-        areaStyle: { color: t["series-1-wash"], opacity: 1 },
+        areaStyle: { color: wash, opacity: 1 },
         silent: true,
       },
       {
+        id: "value",
         type: "line",
         name: def.label,
         data: points.map((p) => [p.date, p.value === null ? null : p.value * scale]),
-        lineStyle: { width: 2, color: t["series-1"], cap: "round", join: "round" },
-        itemStyle: { color: t["series-1"], borderColor: t["surface-1"], borderWidth: 2 },
+        lineStyle: { width: 2, color, cap: "round", join: "round" },
+        itemStyle: { color, borderColor: t["surface-1"], borderWidth: 2 },
         symbol: "circle",
         symbolSize: 8,
         showSymbol: Boolean(def.sparse),
@@ -88,7 +94,7 @@ export default function TrendChart({ metric, days, end, height = 240 }: TrendCha
       }}
     >
       {points.length === 0 ? (
-        <p className="py-8 text-sm text-slate-500">No data in this range.</p>
+        <p className="py-8 text-sm text-stone-500">No data in this range.</p>
       ) : (
         <Chart option={option} height={height} label={`${def.label} over the last ${days} days`} />
       )}

@@ -29,18 +29,68 @@ health dashboard. Decisions (2026-10-31): **no gamification**, **Coach stays its
 - **3D/WebGL, neumorphism, retrofuturism, maximalism, collage, neo-brutalism:** wrong tone
   for health data, low contrast, or heavy for no information gain.
 
-## Motion system
+## Phase 7 refinement (2026-11-05): colour, layout, motion, fluid charts
+
+Driven by PRODUCT.md: readiness first (morning phone check), long-term trends (laptop deep
+dive), private by construction. Changes below supersede the Phase 6 notes they contradict.
+
+### Colour
+- **Neutrals are warm** (Tailwind `stone`), matching the chart tokens; the sidebar sits on
+  a second, slightly darker neutral layer.
+- **Hue means something** (tokens in `src/index.css`):
+
+  | Role | Light / dark | Where |
+  |---|---|---|
+  | Status `good` / `warning` / `critical` | validated palette | recovery band, week strip, flags |
+  | Pillar `sleep` (violet) | `#6650d0` / `#9d8df0` | Sleep tile, Sleep page title dot and charts, sleep metrics on Trends, sleep breakdown |
+  | Pillar `strain` (teal) | `#0b7f8c` / `#3fb6c2` | Strain tile, Activity page title dot and step bars, strain/AZM on Trends |
+  | `series-1` (blue) | unchanged | every other single-series chart, focus ring, selection |
+
+- Pillar and status hues are for **marks only** (dots, bars, lines, tints), never body text,
+  and every one is paired with a text label.
+- The recovery panel is tinted with its band colour (9% `color-mix`) instead of a glow.
+- Browser surfaces follow the palette: text selection, caret, scrollbar, link underline
+  offset; numerals are tabular app-wide.
+
+### Layout (Today)
+1. **Recovery panel** leads (number up to 6rem, band label, meter, verdict, "Ask why"), with
+   the 7-day strip inside it: recovery history belongs to recovery.
+2. **Sleep and Strain** tiles beside it on wide screens, below it on a phone. Each links to
+   its page; the strain meter shades today's suggested range.
+3. Warnings, then the coach's brief.
+4. **Your day:** steps, AZM, calories, distance, sedentary time, stress in one hairline grid
+   (not a row of cards).
+5. **Behind the scores:** comparison table and the two breakdowns.
+
+Rhythm: 16 px inside a group, 40 px between groups. Stress moved from a top tile into "Your
+day" (it isn't a readiness pillar).
+
+### Motion
 | Token | Value | Used for |
 |---|---|---|
-| `fast` | 150 ms, ease-out | hover, focus, small state changes |
-| `base` | 220 ms, ease-out | cards and panels entering, page transitions |
-| `count` | ~800 ms spring (no overshoot) | hero number count-up, meter fill |
-| stagger | 40 ms between items | card grids, lists |
+| `fast` | 150 ms, ease-out | hover, page cross-fade, nav highlight slide |
+| `base` | 220 ms, ease-out | week-strip selection slide, overlays, chat messages |
+| `count` | 800 ms, ease-out | numbers and meters moving to a new value |
+| chart update | 480 ms, cubic in-out | chart lines gliding between days/metrics |
 
-- Enter: fade + 8 px rise. Exit: fade only. Charts animate once on first render.
-- `MotionConfig reducedMotion="user"`: with *reduce motion* on, transforms are skipped and
-  values appear immediately.
-- Never animate while data is refetching (hold the previous render, as today).
+- **Motion shows change, not arrival.** First paint is static: no count-up from zero, no
+  staggered card entrances, no chart draw-in. Switching day rolls each number and meter from
+  the previous day's value to the new one.
+- Selection indicators slide (sidebar item, mobile tab bar, week strip) via shared layout.
+- `prefers-reduced-motion`: Motion skips transforms (`MotionConfig reducedMotion="user"`),
+  numbers jump to their value, and charts turn animation off.
+
+### Fluid charts (the one ambitious moment)
+- Each chart keeps a single ECharts instance; new data merges into series matched by id, so
+  lines **glide** from one day to the next (Heart, Sleep, Activity) and from one metric to
+  another (Trends) instead of being redrawn.
+- **Heart, zoomable day:** drag or brush the strip under the chart (touch and mouse), or
+  Ctrl/⌘ + scroll / pinch on a trackpad. Below a 4-hour window the chart fetches **every
+  reading** in view (`GET /api/heart?start_ms&end_ms`, up to 5000 points) and sharpens on top
+  of the simplified day line. "Show whole day" resets. The table view lists the zoomed
+  readings.
+- In-plot drag zoom is enabled only with a precise pointer, so it never traps page scroll on
+  a phone.
 
 ## Theme
 - Tailwind switches from `media` to `class` dark mode; `<html class="dark">` is set from the
@@ -49,11 +99,7 @@ health dashboard. Decisions (2026-10-31): **no gamification**, **Coach stays its
   theme changes.
 
 ## Page changes
-- **Today:**
-  - Hero: large recovery number counts up, status label, tinted glow, coach verdict line
-    (brief headline), and an "Ask why" link.
-  - A 7-day strip of recovery (number + status label per day, links to that day).
-  - Existing tiles, tables and the brief card animate in.
+- **Today:** see "Layout (Today)" above (Phase 7 replaced the Phase 6 hero and tiles).
 - **Coach:**
   - Opens with `?q=` prefilled from "Ask about this" links. The question is placed in the
     input box and not sent automatically, so you stay in control.

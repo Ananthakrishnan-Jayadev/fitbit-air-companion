@@ -1,7 +1,6 @@
 import { useState } from "react";
 import TrendChart from "../components/charts/TrendChart.tsx";
 import { LoadError, Loading } from "../components/PageState.tsx";
-import { Stagger, StaggerItem } from "../components/motion/Stagger.tsx";
 import StatTile from "../components/StatTile.tsx";
 import { formatDayLabel, formatNumber } from "../format.ts";
 import { useBody } from "../hooks/useData.ts";
@@ -26,7 +25,7 @@ export default function BodyPage() {
     return (
       <section className="max-w-4xl">
         <h1 className="mb-4 text-2xl font-semibold tracking-tight">Body</h1>
-        <p className="rounded-lg border border-dashed border-slate-300 p-8 text-center text-sm text-slate-600 dark:border-slate-700 dark:text-slate-400">
+        <p className="rounded-lg border border-dashed border-stone-300 p-8 text-center text-sm text-stone-600 dark:border-stone-700 dark:text-stone-400">
           No weigh-ins yet. Readings from your smart scale appear here once they reach Google
           Health (for Renpho: via Health Connect) and the next sync runs.
         </p>
@@ -43,9 +42,9 @@ export default function BodyPage() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Body</h1>
-          <p className="text-sm text-slate-500">Last weigh-in: {formatDayLabel(data.latest_date)}</p>
+          <p className="text-sm text-stone-500">Last weigh-in: {formatDayLabel(data.latest_date)}</p>
         </div>
-        <div className="flex overflow-hidden rounded-md border border-slate-300 dark:border-slate-700" role="group" aria-label="Range">
+        <div className="flex overflow-hidden rounded-md border border-stone-300 dark:border-stone-700" role="group" aria-label="Range">
           {RANGES.map((r) => (
             <button
               key={r}
@@ -54,8 +53,8 @@ export default function BodyPage() {
               onClick={() => setDays(r)}
               className={`px-3 py-1 text-sm ${
                 r === days
-                  ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
-                  : "hover:bg-slate-100 dark:hover:bg-slate-800"
+                  ? "bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900"
+                  : "hover:bg-stone-100 dark:hover:bg-stone-800"
               }`}
             >
               {r}d
@@ -64,8 +63,7 @@ export default function BodyPage() {
         </div>
       </div>
 
-      <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StaggerItem>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatTile
             label="Weight"
             value={formatNumber(data.weight_kg, 1)}
@@ -74,24 +72,17 @@ export default function BodyPage() {
               .filter(Boolean)
               .join(" · ") || undefined}
           />
-        </StaggerItem>
-        <StaggerItem>
           <StatTile
             label="Body fat"
             value={formatNumber(data.body_fat_pct, 1)}
             unit="%"
             detail={fatChange ? `${fatChange} in 30 days` : undefined}
           />
-        </StaggerItem>
-        <StaggerItem>
           <StatTile label="Lean mass" value={formatNumber(data.lean_mass_kg, 1)} unit="kg" detail="Weight minus fat mass" />
-        </StaggerItem>
-        <StaggerItem>
           <StatTile label="Fat mass" value={formatNumber(data.fat_mass_kg, 1)} unit="kg" />
-        </StaggerItem>
-      </Stagger>
+      </div>
 
-      <p className="mt-3 text-xs text-slate-500">
+      <p className="mt-3 text-xs text-stone-500">
         Weight can swing 1–2 kg day to day with water and food; watch the trend, not single readings.
         Scale body-fat estimates are approximate and work best for tracking change over time.
       </p>
